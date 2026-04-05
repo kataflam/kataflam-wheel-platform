@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Kataflam Spin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            height: 100vh;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            padding: 30px 20px;
+            color: white;
+        }
+
+        .sidebar .logo {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .sidebar nav {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .sidebar nav a {
+            padding: 15px 20px;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            border-radius: 10px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+        }
+
+        .sidebar nav a:hover, .sidebar nav a.active {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .sidebar .user-info {
+            position: absolute;
+            bottom: 30px;
+            left: 20px;
+            right: 20px;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+
+        .sidebar .user-info .name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .sidebar .user-info .plan {
+            font-size: 0.8em;
+            opacity: 0.8;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            padding: 30px;
+        }
+
+        .top-bar {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .top-bar h1 {
+            color: #333;
+            font-size: 1.8em;
+        }
+
+        .top-bar button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .top-bar button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .stat-card .label {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .change {
+            font-size: 0.9em;
+            color: #28a745;
+        }
+
+        .campaigns-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .campaigns-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .campaign-card {
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+
+        .campaign-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+        }
+
+        .campaign-card .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .campaign-card .name {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .campaign-card .status {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .campaign-card .status.active {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .campaign-card .status.paused {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+
+        .campaign-card .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .campaign-card .stat-item {
+            text-align: center;
+        }
+
+        .campaign-card .stat-item .number {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .campaign-card .stat-item .label {
+            font-size: 0.8em;
+            color: #666;
+        }
+
+        .campaign-card .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .campaign-card .actions button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .campaign-card .actions .edit-btn {
+            background: #667eea;
+            color: white;
+        }
+
+        .campaign-card .actions .embed-btn {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .campaign-card .actions .stats-btn {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #667eea;
+            font-size: 1.2em;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-content h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .modal-content textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 0.9em;
+            resize: vertical;
+            min-height: 150px;
+        }
+
+        .modal-content .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-content .buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .modal-content .buttons .copy-btn {
+            background: #667eea;
+            color: white;
+        }
+
+        .modal-content .buttons .close-btn {
+            background: #f5f5f5;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">🎡 Kataflam</div>
+        <nav>
+            <a href="#" class="active"><span>📊</span> Dashboard</a>
+            <a href="#"><span>🎡</span> Campaigns</a>
+            <a href="#"><span>📈</span> Analytics</a>
+            <a href="#"><span>⚙️</span> Settings</a>
+            <a href="#" onclick="logout()"><span>🚪</span> Logout</a>
+        </nav>
+        <div class="user-info">
+            <div class="name" id="userName">Loading...</div>
+            <div class="plan" id="userPlan">Loading...</div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="top-bar">
+            <h1>Dashboard</h1>
+            <button onclick="createNewCampaign()">➕ New Campaign</button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="label">Total Spins</div>
+                <div class="value" id="totalSpins">0</div>
+                <div class="change">+0% this week</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Active Campaigns</div>
+                <div class="value" id="activeCampaigns">0</div>
+                <div class="change">0 total</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Unique Users</div>
+                <div class="value" id="uniqueUsers">0</div>
+                <div class="change">+0% this week</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Conversion Rate</div>
+                <div class="value" id="conversionRate">0%</div>
+                <div class="change">Average</div>
+            </div>
+        </div>
+
+        <div class="campaigns-section">
+            <h2>
+                My Campaigns
+                <span style="font-size: 0.6em; color: #999; font-weight: normal;">Manage your spin-the-wheel campaigns</span>
+            </h2>
+            <div id="campaignsList">
+                <div class="loading">⏳ Loading campaigns...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="embedModal">
+        <div class="modal-content">
+            <h2>📋 Embed Code</h2>
+            <p style="color: #666; margin-bottom: 20px;">Copy this code and paste it into your website:</p>
+            <textarea id="embedCode" readonly></textarea>
+            <div class="buttons">
+                <button class="copy-btn" onclick="copyEmbedCode()">📋 Copy Code</button>
+                <button class="close-btn" onclick="closeModal('embedModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD0LKrnMv-hhM5_uzKeGvjOf-yOXt7rVmM",
+            authDomain: "kataflam-white-label.firebaseapp.com",
+            projectId: "kataflam-white-label",
+            storageBucket: "kataflam-white-label.firebasestorage.app",
+            messagingSenderId: "571581972788",
+            appId: "1:571581972788:web:7bb7cc53145a425e40a561",
+            measurementId: "G-WKYL3FJXYL"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let userData = null;
+        let campaigns = [];
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                await loadUserData();
+                await loadCampaigns();
+            } else {
+                window.location.href = 'client-auth.html';
+            }
+        });
+
+        async function loadUserData() {
+            try {
+                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                if (userDoc.exists()) {
+                    userData = userDoc.data();
+                    document.getElementById('userName').textContent = userData.companyName || currentUser.email;
+                    document.getElementById('userPlan').textContent = (userData.plan || 'free').toUpperCase() + ' Plan';
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+            }
+        }
+
+        async function loadCampaigns() {
+            try {
+                const campaignsSnapshot = await getDocs(collection(db, 'campaigns'));
+                campaigns = [];
+                
+                campaignsSnapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    if (data.userId === currentUser.uid) {
+                        campaigns.push({ id: docSnap.id, ...data });
+                    }
+                });
+
+                renderCampaigns();
+                updateDashboardStats();
+            } catch (error) {
+                console.error('Error loading campaigns:', error);
+                document.getElementById('campaignsList').innerHTML = `
+                    <div class="empty-state">
+                        <h3>Error loading campaigns</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderCampaigns() {
+            const container = document.getElementById('campaignsList');
+            
+            if (campaigns.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No campaigns yet</h3>
+                        <p>Create your first spin-the-wheel campaign to get started!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = campaigns.map(campaign => `
+                <div class="campaign-card">
+                    <div class="header">
+                        <div class="name">${campaign.name}</div>
+                        <div class="status ${campaign.status}">${campaign.status.toUpperCase()}</div>
+                    </div>
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="number">${campaign.totalSpins || 0}</div>
+                            <div class="label">Total Spins</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="number">${campaign.uniqueUsers || 0}</div>
+                            <div class="label">Users</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="number">${campaign.segments?.length || 0}</div>
+                            <div class="label">Segments</div>
+                        </div>
+                    </div>
+                    <div class="actions">
+                        <button class="edit-btn" onclick="editCampaign('${campaign.id}')">✏️ Edit</button>
+                        <button class="embed-btn" onclick="showEmbedCode('${campaign.subdomain}')">📋 Embed</button>
+                        <button class="stats-btn" onclick="viewStats('${campaign.id}')">📊 Stats</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateDashboardStats() {
+            const totalSpins = campaigns.reduce((sum, c) => sum + (c.totalSpins || 0), 0);
+            const uniqueUsers = campaigns.reduce((sum, c) => sum + (c.uniqueUsers || 0), 0);
+            const activeCampaigns = campaigns.filter(c => c.status === 'active').length;
+            const conversionRate = totalSpins > 0 ? ((uniqueUsers / totalSpins) * 100).toFixed(1) : 0;
+
+            document.getElementById('totalSpins').textContent = totalSpins.toLocaleString();
+            document.getElementById('activeCampaigns').textContent = activeCampaigns;
+            document.getElementById('uniqueUsers').textContent = uniqueUsers.toLocaleString();
+            document.getElementById('conversionRate').textContent = conversionRate + '%';
+
+            document.querySelectorAll('.stat-card')[1].querySelector('.change').textContent = campaigns.length + ' total';
+        }
+
+        window.createNewCampaign = function() {
+            alert('🚧 Campaign Builder coming in Week 4!\n\nYou\'ll be able to:\n- Create unlimited campaigns\n- Customize each wheel\n- Set probabilities\n- Add vouchers');
+        };
+
+        window.editCampaign = function(campaignId) {
+            alert('🚧 Wheel Editor coming in Week 5!\n\nYou\'ll be able to customize:\n- Segments\n- Colors\n- Probabilities\n- Vouchers\n- And more!');
+        };
+
+        window.showEmbedCode = function(subdomain) {
+            const embedCode = `<!-- Kataflam Spin Wheel -->
+<iframe 
+    src="https://kataflam-client-wheel.vercel.app/?client=${subdomain}"
+    width="500"
+    height="600"
+    frameborder="0"
+    style="border-radius: 15px;">
+</iframe>`;
+
+            document.getElementById('embedCode').value = embedCode;
+            document.getElementById('embedModal').style.display = 'flex';
+        };
+
+        window.copyEmbedCode = function() {
+            const textarea = document.getElementById('embedCode');
+            textarea.select();
+            document.execCommand('copy');
+            alert('✅ Embed code copied to clipboard!');
+        };
+
+        window.closeModal = function(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        };
+
+        window.viewStats = function(campaignId) {
+            alert('🚧 Advanced Analytics coming in Week 7!\n\nYou\'ll see:\n- Time-based charts\n- Segment performance\n- User demographics\n- Export reports');
+        };
+
+        window.logout = async function() {
+            if (confirm('Are you sure you want to logout?')) {
+                await signOut(auth);
+                window.location.href = 'client-auth.html';
+            }
+        };
+    </script>
+</body>
+</html>

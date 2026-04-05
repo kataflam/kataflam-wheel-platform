@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spin & Win</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, var(--primary-color, #6366f1) 0%, var(--secondary-color, #a855f7) 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 2.8em;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 4px 0 rgba(0,0,0,0.2);
+            margin-bottom: 10px;
+        }
+
+        .logo img {
+            max-width: 200px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+
+        .subtitle {
+            color: #fff;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            margin: 0 auto 40px;
+        }
+
+        #canvas {
+            border-radius: 50%;
+            box-shadow: 0 0 0 10px #fff, 0 0 0 12px rgba(0,0,0,0.1), 0 15px 50px rgba(0,0,0,0.3);
+        }
+
+        .pointer {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            font-size: 3em;
+            color: #fff;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+        }
+
+        .center-circle {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: #fff;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            color: var(--primary-color, #6366f1);
+            border: 5px solid #f8f9fa;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+
+        .spin-button {
+            background: #fff;
+            color: var(--primary-color, #6366f1);
+            border: none;
+            padding: 18px 50px;
+            font-size: 1.4em;
+            font-weight: 900;
+            border-radius: 60px;
+            cursor: pointer;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .spin-button:hover:not(:disabled) {
+            transform: translateY(-3px);
+            background: #fef3c7;
+        }
+
+        .spin-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .result-icon { font-size: 4em; margin-bottom: 20px; }
+        .result-title { font-size: 2em; color: var(--primary-color, #6366f1); margin-bottom: 15px; font-weight: bold; }
+        .voucher-code { 
+            background: linear-gradient(135deg, var(--primary-color, #6366f1), var(--secondary-color, #a855f7)); 
+            color: white; 
+            padding: 20px; 
+            border-radius: 10px; 
+            font-size: 1.8em; 
+            font-weight: bold; 
+            margin: 20px 0; 
+            letter-spacing: 2px; 
+        }
+        .result-message { color: #666; margin-bottom: 20px; font-size: 1.1em; }
+
+        button {
+            background: var(--primary-color, #6366f1);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+        }
+
+        button:hover { 
+            background: var(--secondary-color, #a855f7); 
+        }
+
+        .footer {
+            color: white;
+            margin-top: 20px;
+            opacity: 0.8;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--primary-color, #6366f1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            flex-direction: column;
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 1.5em;
+            margin-top: 20px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-screen {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 500px;
+            margin: 100px auto;
+            text-align: center;
+        }
+
+        .error-screen h2 {
+            color: #dc3545;
+            margin-bottom: 15px;
+        }
+
+        .powered-by {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.9);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.7em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text">🎯 Loading...</div>
+    </div>
+
+    <div class="container" id="mainContainer" style="display: none;">
+        <div class="logo" id="brandLogo">
+            <!-- Logo will be inserted here -->
+        </div>
+        <div class="subtitle">Spin the Wheel & Win Amazing Prizes!</div>
+
+        <div class="wheel-container">
+            <div class="pointer">▼</div>
+            <canvas id="canvas" width="400" height="400"></canvas>
+            <div class="center-circle">SPIN</div>
+        </div>
+
+        <button class="spin-button" id="spinBtn">🎯 SPIN NOW!</button>
+        <div class="footer">Good luck! 🎉</div>
+    </div>
+
+    <div class="container" id="alreadySpun" style="display: none;">
+        <div class="logo" id="brandLogoAlready">Already Played</div>
+        <div class="modal-content">
+            <h2>🎯 Already Played!</h2>
+            <p>You've already spun the wheel. Each user gets one spin only!</p>
+            <p>Thank you for participating!</p>
+        </div>
+    </div>
+
+    <div class="modal" id="resultModal">
+        <div class="modal-content">
+            <div class="result-icon" id="resultIcon"></div>
+            <div class="result-title" id="resultTitle"></div>
+            <div class="voucher-code" id="voucherCode" style="display:none;"></div>
+            <div class="result-message" id="resultMessage"></div>
+            <button id="copyBtn" style="display:none;">📋 Copy Code</button>
+            <button onclick="document.getElementById('resultModal').style.display='none'">Close</button>
+        </div>
+    </div>
+
+    <div class="powered-by">Powered by Kataflam</div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, collection, getDocs } from 'https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js';
+
+        // 🔥 Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyD0LKrnMv-hhM5_uzKeGvjOf-yOXt7rVmM",
+            authDomain: "kataflam-white-label.firebaseapp.com",
+            projectId: "kataflam-white-label",
+            storageBucket: "kataflam-white-label.firebasestorage.app",
+            messagingSenderId: "571581972788",
+            appId: "1:571581972788:web:7bb7cc53145a425e40a561",
+            measurementId: "G-WKYL3FJXYL"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Get client ID from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const clientSubdomain = urlParams.get('client') || 'test';
+
+        let clientId = null;
+        let wheelConfig = null;
+        let segments = [];
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let isSpinning = false;
+        let currentRotation = 0;
+        let userId = null;
+
+        // Load client configuration
+        async function loadClientConfig() {
+            try {
+                console.log('Looking for client subdomain:', clientSubdomain);
+                
+                // Get all clients and find by subdomain
+                const clientsSnapshot = await getDocs(collection(db, 'clients'));
+                let foundClient = null;
+                let foundClientId = null;
+
+                console.log('Total clients found:', clientsSnapshot.size);
+
+                clientsSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    console.log('Checking client:', doc.id, 'subdomain:', data.subdomain);
+                    
+                    if (data.subdomain === clientSubdomain) {
+                        foundClient = data;
+                        foundClientId = doc.id;
+                        console.log('✅ Found matching client!', doc.id);
+                    }
+                });
+
+                if (!foundClient) {
+                    console.error('❌ No client found with subdomain:', clientSubdomain);
+                    throw new Error('Client not found');
+                }
+
+                clientId = foundClientId;
+                const clientData = foundClient;
+
+                // Check if client is active
+                if (clientData.status !== 'active' && clientData.status !== 'trial') {
+                    throw new Error('Client subscription expired');
+                }
+
+                console.log('Client status:', clientData.status);
+
+                // Load wheel config
+                const wheelDoc = await getDoc(doc(db, 'wheels', clientId));
+                if (!wheelDoc.exists()) {
+                    console.error('❌ No wheel config found for client:', clientId);
+                    throw new Error('Wheel configuration not found');
+                }
+
+                wheelConfig = wheelDoc.data();
+                segments = wheelConfig.segments;
+
+                console.log('✅ Wheel config loaded. Segments:', segments.length);
+
+                // Apply branding
+                applyBranding(wheelConfig, clientData);
+
+                return true;
+            } catch (error) {
+                console.error('Config load error:', error);
+                showError('Configuration Error', error.message);
+                return false;
+            }
+        }
+
+        function applyBranding(config, clientData) {
+            // Apply colors
+            if (config.brandColors) {
+                document.documentElement.style.setProperty('--primary-color', config.brandColors.primary);
+                document.documentElement.style.setProperty('--secondary-color', config.brandColors.secondary);
+            }
+
+            // Apply logo
+            if (config.logo) {
+                document.getElementById('brandLogo').innerHTML = `<img src="${config.logo}" alt="${clientData.name}">`;
+                document.getElementById('brandLogoAlready').innerHTML = `<img src="${config.logo}" alt="${clientData.name}">`;
+            } else {
+                document.getElementById('brandLogo').textContent = clientData.name;
+                document.getElementById('brandLogoAlready').textContent = clientData.name;
+            }
+        }
+
+        function getUserId() {
+            let id = localStorage.getItem('spin_user_' + clientId);
+            if (!id) {
+                id = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('spin_user_' + clientId, id);
+            }
+            return id;
+        }
+
+        async function checkIfSpun() {
+            userId = getUserId();
+            try {
+                const spinRef = doc(db, 'spins', clientId + '_' + userId);
+                const userDoc = await getDoc(spinRef);
+                
+                if (userDoc.exists()) {
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    document.getElementById('alreadySpun').style.display = 'block';
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                console.error('Check spin error:', error);
+                return false;
+            }
+        }
+
+        function drawWheel() {
+            const centerX = 200, centerY = 200, radius = 200;
+            const numSegments = segments.length;
+            const anglePerSegment = (Math.PI * 2) / numSegments;
+
+            ctx.clearRect(0, 0, 400, 400);
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(currentRotation);
+
+            segments.forEach((segment, i) => {
+                const startAngle = i * anglePerSegment;
+                const endAngle = startAngle + anglePerSegment;
+
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.arc(0, 0, radius, startAngle, endAngle);
+                ctx.fillStyle = segment.color;
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                ctx.save();
+                ctx.rotate(startAngle + anglePerSegment / 2);
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 16px Arial';
+                ctx.shadowColor = 'rgba(0,0,0,0.8)';
+                ctx.shadowBlur = 5;
+                ctx.fillText(segment.text, radius * 0.65, 5);
+                ctx.restore();
+            });
+
+            ctx.restore();
+        }
+
+        function selectWinnerByProbability() {
+            const total = segments.reduce((sum, s) => sum + s.probability, 0);
+            let random = Math.random() * total;
+            
+            for (let i = 0; i < segments.length; i++) {
+                random -= segments[i].probability;
+                if (random <= 0) return i;
+            }
+            return 0;
+        }
+
+        async function spin() {
+            if (isSpinning) return;
+            
+            const alreadySpun = await checkIfSpun();
+            if (alreadySpun) return;
+
+            isSpinning = true;
+            document.getElementById('spinBtn').disabled = true;
+            document.getElementById('spinBtn').textContent = '🎪 Spinning...';
+
+            const winnerIndex = selectWinnerByProbability();
+            const numSegments = segments.length;
+            const anglePerSegment = (Math.PI * 2) / numSegments;
+
+            const spins = 5;
+            const targetSegmentAngle = winnerIndex * anglePerSegment;
+            const pointerOffset = (Math.PI * 3) / 2;
+            const targetRotation = (Math.PI * 2 * spins) + (pointerOffset - targetSegmentAngle - anglePerSegment / 2);
+
+            const startRotation = currentRotation;
+            const startTime = Date.now();
+            const duration = 4000;
+
+            function animate() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easing = 1 - Math.pow(1 - progress, 3);
+
+                currentRotation = startRotation + (targetRotation - startRotation) * easing;
+                drawWheel();
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    saveSpinToFirebase(winnerIndex);
+                }
+            }
+
+            animate();
+        }
+
+        async function saveSpinToFirebase(winnerIndex) {
+            const segment = segments[winnerIndex];
+            const voucherList = segment.vouchers ? segment.vouchers.split(',').map(v => v.trim()).filter(v => v) : [];
+            const voucher = voucherList.length > 0 ? voucherList[Math.floor(Math.random() * voucherList.length)] : null;
+
+            try {
+                // Save user's spin
+                const spinRef = doc(db, 'spins', clientId + '_' + userId);
+                await setDoc(spinRef, {
+                    clientId: clientId,
+                    userId: userId,
+                    prize: segment.text,
+                    voucher: voucher || 'none',
+                    timestamp: new Date().toISOString()
+                });
+
+                // Update client analytics
+                const analyticsRef = doc(db, 'analytics', clientId);
+                const analyticsDoc = await getDoc(analyticsRef);
+                
+                if (analyticsDoc.exists()) {
+                    await updateDoc(analyticsRef, {
+                        totalSpins: increment(1),
+                        lastUpdate: new Date().toISOString()
+                    });
+                } else {
+                    await setDoc(analyticsRef, {
+                        totalSpins: 1,
+                        uniqueUsers: 1,
+                        lastUpdate: new Date().toISOString()
+                    });
+                }
+
+                // Update client total spins
+                await updateDoc(doc(db, 'clients', clientId), {
+                    totalSpins: increment(1)
+                });
+
+                showResult(segment, voucher);
+            } catch (error) {
+                console.error('Save error:', error);
+                alert('⚠️ Connection error. Please try again.');
+            }
+        }
+
+        function showResult(segment, voucher) {
+            document.getElementById('resultIcon').textContent = voucher ? '🎉' : '🎯';
+            document.getElementById('resultTitle').textContent = voucher ? 'Congratulations!' : 'Almost There!';
+            document.getElementById('resultMessage').textContent = voucher 
+                ? `You won ${segment.text}! Use this code at checkout`
+                : 'No luck this time! But thanks for playing!';
+
+            if (voucher) {
+                document.getElementById('voucherCode').textContent = voucher;
+                document.getElementById('voucherCode').style.display = 'block';
+                document.getElementById('copyBtn').style.display = 'inline-block';
+                document.getElementById('copyBtn').onclick = () => {
+                    navigator.clipboard.writeText(voucher);
+                    alert('✅ Code copied!');
+                };
+            } else {
+                document.getElementById('voucherCode').style.display = 'none';
+                document.getElementById('copyBtn').style.display = 'none';
+            }
+
+            document.getElementById('resultModal').style.display = 'flex';
+        }
+
+        function showError(title, message) {
+            document.getElementById('loadingOverlay').style.display = 'none';
+            document.body.innerHTML = `
+                <div class="error-screen">
+                    <h2>❌ ${title}</h2>
+                    <p>${message}</p>
+                    <p style="margin-top: 20px; color: #666; font-size: 0.9em;">
+                        Please contact the administrator.
+                    </p>
+                </div>
+            `;
+        }
+
+        // Initialize
+        async function init() {
+            const configLoaded = await loadClientConfig();
+            if (!configLoaded) return;
+
+            drawWheel();
+            const alreadySpun = await checkIfSpun();
+            
+            if (!alreadySpun) {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                document.getElementById('mainContainer').style.display = 'block';
+            }
+            
+            document.getElementById('spinBtn').addEventListener('click', spin);
+        }
+
+        init();
+    </script>
+</body>
+</html>

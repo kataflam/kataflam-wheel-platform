@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kataflam White Label - Super Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 { color: #667eea; font-size: 2em; }
+        .header .stats { display: flex; gap: 30px; }
+        .stat-mini { text-align: center; }
+        .stat-mini .value { font-size: 2em; font-weight: bold; color: #667eea; }
+        .stat-mini .label { font-size: 0.9em; color: #666; }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 15px 25px;
+            background: #f5f5f5;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .tab.active { background: #667eea; color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .clients-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .client-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .client-card .status {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .client-card .status.active { background: #e8f5e9; color: #2e7d32; }
+        .client-card .status.expired { background: #ffebee; color: #c62828; }
+        .client-card .status.trial { background: #fff3e0; color: #ef6c00; }
+        .client-card h3 { color: #333; margin-bottom: 10px; font-size: 1.3em; }
+        .client-card .subdomain { color: #667eea; font-size: 0.9em; margin-bottom: 15px; font-family: monospace; }
+
+        .client-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .client-stats .stat { text-align: center; }
+        .client-stats .stat .number { font-size: 1.8em; font-weight: bold; color: #667eea; }
+        .client-stats .stat .label { font-size: 0.8em; color: #666; }
+        .client-actions { display: flex; gap: 10px; margin-top: 15px; }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        button:hover { background: #764ba2; transform: translateY(-2px); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        button.secondary { background: #e0e0e0; color: #333; flex: 0.5; }
+        button.secondary:hover { background: #bdbdbd; }
+        button.danger { background: #dc3545; flex: 0.5; }
+        button.danger:hover { background: #c82333; }
+        button.success { background: #28a745; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-content h2 { color: #667eea; margin-bottom: 20px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 8px; color: #333; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #667eea; }
+
+        .add-client-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #28a745;
+            color: white;
+            border: none;
+            font-size: 2em;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+            z-index: 999;
+        }
+
+        .add-client-btn:hover { transform: scale(1.1); }
+        .empty-state { background: white; padding: 60px; border-radius: 15px; text-align: center; }
+        .empty-state h3 { color: #666; margin-bottom: 10px; }
+
+        .logout-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            z-index: 999;
+        }
+
+        .settings-card { background: white; padding: 30px; border-radius: 15px; margin-bottom: 20px; }
+        .settings-card h3 { color: #667eea; margin-bottom: 20px; }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .analytics-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .analytics-card .number { font-size: 2.5em; font-weight: bold; color: #667eea; margin: 10px 0; }
+        .analytics-card .label { color: #666; font-size: 0.9em; }
+        .analytics-card .change { color: #28a745; font-size: 0.9em; margin-top: 5px; }
+        .analytics-card .change.negative { color: #dc3545; }
+
+        .chart-container { background: white; padding: 30px; border-radius: 15px; margin-bottom: 20px; }
+        .chart-container h3 { color: #333; margin-bottom: 20px; }
+
+        .simple-chart {
+            height: 300px;
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            border-bottom: 2px solid #ddd;
+            padding: 20px 0;
+        }
+
+        .chart-bar {
+            flex: 1;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            border-radius: 5px 5px 0 0;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .chart-bar:hover { opacity: 0.8; }
+        .chart-bar .value { position: absolute; top: -25px; width: 100%; text-align: center; font-weight: bold; font-size: 0.9em; }
+        .chart-bar .label { position: absolute; bottom: -25px; width: 100%; text-align: center; font-size: 0.8em; color: #666; }
+
+        .billing-table { background: white; border-radius: 15px; overflow: hidden; }
+        .billing-table table { width: 100%; border-collapse: collapse; }
+        .billing-table th { background: #f8f9fa; padding: 15px; text-align: left; font-weight: bold; color: #333; }
+        .billing-table td { padding: 15px; border-bottom: 1px solid #eee; }
+        .billing-table tr:hover { background: #f8f9fa; }
+
+        .badge { padding: 5px 12px; border-radius: 20px; font-size: 0.8em; font-weight: bold; }
+        .badge.paid { background: #e8f5e9; color: #2e7d32; }
+        .badge.pending { background: #fff3e0; color: #ef6c00; }
+        .badge.overdue { background: #ffebee; color: #c62828; }
+    </style>
+</head>
+<body>
+    <button class="logout-btn" onclick="logout()" style="display:none" id="logoutBtn">🚪 Logout</button>
+    <button class="add-client-btn" onclick="showAddClientModal()" style="display:none" id="addBtn">+</button>
+
+    <!-- Login Screen -->
+    <div class="container" id="loginScreen">
+        <div class="header" style="max-width: 500px; margin: 100px auto; display: block; text-align: center;">
+            <h1>🔐 Super Admin</h1>
+            <p style="margin: 20px 0; color: #666;">Kataflam White Label Platform</p>
+            <input type="password" id="passwordInput" placeholder="Enter admin password" style="width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 10px; margin-bottom: 20px;" onkeypress="if(event.key==='Enter') login()">
+            <button onclick="login()" style="width: 100%; padding: 15px;">🔓 Login</button>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div class="container" id="dashboard" style="display: none;">
+        <div class="header">
+            <div>
+                <h1>⚡ White Label Control Panel</h1>
+                <p style="color: #666; margin-top: 5px;">Manage all client wheels</p>
+            </div>
+            <div class="stats">
+                <div class="stat-mini">
+                    <div class="value" id="totalClients">0</div>
+                    <div class="label">Total Clients</div>
+                </div>
+                <div class="stat-mini">
+                    <div class="value" id="activeClients">0</div>
+                    <div class="label">Active</div>
+                </div>
+                <div class="stat-mini">
+                    <div class="value" id="totalRevenue">0</div>
+                    <div class="label">MRR (EGP)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('clients')">👥 Clients</button>
+            <button class="tab" onclick="switchTab('analytics')">📊 Analytics</button>
+            <button class="tab" onclick="switchTab('billing')">💰 Billing</button>
+            <button class="tab" onclick="switchTab('config')">⚙️ Config</button>
+        </div>
+
+        <!-- Clients Tab -->
+        <div id="clientsTab" class="tab-content active">
+            <div class="clients-grid" id="clientsGrid">
+                <div class="empty-state">
+                    <h3>No clients yet</h3>
+                    <p style="color: #999;">Click the + button to add your first client</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="analyticsTab" class="tab-content">
+            <div class="analytics-grid">
+                <div class="analytics-card">
+                    <div class="label">Total Platform Spins</div>
+                    <div class="number" id="analyticsSpins">0</div>
+                    <div class="change" id="analyticsSpinsChange">+0% vs last month</div>
+                </div>
+                <div class="analytics-card">
+                    <div class="label">Total Users</div>
+                    <div class="number" id="analyticsUsers">0</div>
+                    <div class="change" id="analyticsUsersChange">+0% vs last month</div>
+                </div>
+                <div class="analytics-card">
+                    <div class="label">Active Clients</div>
+                    <div class="number" id="analyticsActiveClients">0</div>
+                    <div class="change" id="analyticsClientsChange">+0 this month</div>
+                </div>
+                <div class="analytics-card">
+                    <div class="label">Monthly Revenue</div>
+                    <div class="number" id="analyticsRevenue">0 EGP</div>
+                    <div class="change" id="analyticsRevenueChange">+0% vs last month</div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>📈 Daily Spins (Last 7 Days)</h3>
+                <div class="simple-chart" id="dailySpinsChart"></div>
+            </div>
+
+            <div class="chart-container">
+                <h3>🏆 Top Performing Clients</h3>
+                <div class="billing-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Client</th>
+                                <th>Total Spins</th>
+                                <th>Users</th>
+                                <th>Conversion</th>
+                                <th>Plan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="topClientsTable">
+                            <tr>
+                                <td colspan="5" style="text-align: center; padding: 40px; color: #999;">
+                                    No data yet
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Billing Tab -->
+        <div id="billingTab" class="tab-content">
+            <div class="analytics-grid">
+                <div class="analytics-card">
+                    <div class="label">Monthly Recurring Revenue</div>
+                    <div class="number" id="billingMRR">0 EGP</div>
+                </div>
+                <div class="analytics-card">
+                    <div class="label">Annual Revenue</div>
+                    <div class="number" id="billingARR">0 EGP</div>
+                </div>
+                <div class="analytics-card">
+                    <div class="label">Paid This Month</div>
+                    <div class="number" id="billingPaid">0 EGP</div>
+                </div>
+                <div class="analytics-card">
+                    <div class="label">Pending Payments</div>
+                    <div class="number" id="billingPending">0 EGP</div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>💰 Client Billing Status</h3>
+                <div class="billing-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Client</th>
+                                <th>Plan</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Next Payment</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="billingTable">
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 40px; color: #999;">
+                                    No billing data yet
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuration Tab -->
+        <div id="configTab" class="tab-content">
+            <div class="settings-card">
+                <h3>🎨 Default Wheel Settings</h3>
+                <div class="form-group">
+                    <label>Default Brand Color (Primary)</label>
+                    <input type="color" id="defaultPrimaryColor" value="#667eea">
+                </div>
+                <div class="form-group">
+                    <label>Default Brand Color (Secondary)</label>
+                    <input type="color" id="defaultSecondaryColor" value="#764ba2">
+                </div>
+                <button onclick="saveDefaultColors()" class="success">💾 Save Default Colors</button>
+            </div>
+
+            <div class="settings-card">
+                <h3>📧 Email Settings</h3>
+                <div class="form-group">
+                    <label>Platform Email (From)</label>
+                    <input type="email" id="platformEmail" value="noreply@kataflam-spin.com">
+                </div>
+                <div class="form-group">
+                    <label>Support Email</label>
+                    <input type="email" id="supportEmail" value="support@kataflam-spin.com">
+                </div>
+                <button onclick="saveEmailSettings()" class="success">💾 Save Email Settings</button>
+            </div>
+
+            <div class="settings-card">
+                <h3>💳 Payment Settings</h3>
+                <div class="form-group">
+                    <label>Currency</label>
+                    <select id="currency">
+                        <option value="EGP">Egyptian Pound (EGP)</option>
+                        <option value="USD">US Dollar (USD)</option>
+                        <option value="EUR">Euro (EUR)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Default Trial Period (days)</label>
+                    <input type="number" id="trialPeriod" value="7">
+                </div>
+                <button onclick="savePaymentSettings()" class="success">💾 Save Payment Settings</button>
+            </div>
+
+            <div class="settings-card">
+                <h3>🔒 Security Settings</h3>
+                <div class="form-group">
+                    <label>Change Super Admin Password</label>
+                    <input type="password" id="newPassword" placeholder="New password">
+                </div>
+                <div class="form-group">
+                    <label>Confirm Password</label>
+                    <input type="password" id="confirmPassword" placeholder="Confirm password">
+                </div>
+                <button onclick="changePassword()" class="danger">🔐 Change Password</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Client Modal -->
+    <div class="modal" id="addClientModal">
+        <div class="modal-content">
+            <h2>➕ Add New Client</h2>
+            
+            <div class="form-group">
+                <label>Client Name *</label>
+                <input type="text" id="clientName" placeholder="e.g., Jumia Egypt">
+            </div>
+
+            <div class="form-group">
+                <label>Subdomain *</label>
+                <input type="text" id="clientSubdomain" placeholder="e.g., jumia">
+                <small style="color: #666;">Will be: subdomain.kataflam-spin.com</small>
+            </div>
+
+            <div class="form-group">
+                <label>Plan *</label>
+                <select id="clientPlan">
+                    <option value="trial" data-price="0">Trial (Free - 7 days)</option>
+                    <option value="starter" data-price="25000">Starter (25k EGP/year)</option>
+                    <option value="business" data-price="100000">Business (100k EGP/year)</option>
+                    <option value="growth" data-price="200000">Growth (200k EGP/year)</option>
+                    <option value="enterprise" data-price="500000">Enterprise (500k+ EGP/year)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Contract Duration (months)</label>
+                <input type="number" id="clientDuration" value="12" min="1">
+            </div>
+
+            <div class="form-group">
+                <label>Contact Email</label>
+                <input type="email" id="clientEmail" placeholder="contact@client.com">
+            </div>
+
+            <div class="form-group">
+                <label>Contact Phone</label>
+                <input type="tel" id="clientPhone" placeholder="+20 xxx xxx xxxx">
+            </div>
+
+            <div class="form-group">
+                <label>Notes</label>
+                <textarea id="clientNotes" rows="3" placeholder="Internal notes..."></textarea>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 30px;">
+                <button onclick="closeModal('addClientModal')" class="secondary" style="flex: 1;">Cancel</button>
+                <button onclick="createClient(event)" class="success" id="createClientBtn" style="flex: 1;">Create Client</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, deleteDoc, writeBatch } from 'https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD0LKrnMv-hhM5_uzKeGvjOf-yOXt7rVmM",
+            authDomain: "kataflam-white-label.firebaseapp.com",
+            projectId: "kataflam-white-label",
+            storageBucket: "kataflam-white-label.firebasestorage.app",
+            messagingSenderId: "571581972788",
+            appId: "1:571581972788:web:7bb7cc53145a425e40a561",
+            measurementId: "G-WKYL3FJXYL"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const SUPER_ADMIN_PASSWORD = 'kataflam-super-2025';
+        let clients = [];
+        let platformStats = { totalSpins: 0, totalUsers: 0, totalRevenue: 0 };
+
+        const PLAN_PRICES = {
+            trial: 0,
+            starter: 25000,
+            business: 100000,
+            growth: 200000,
+            enterprise: 500000
+        };
+
+        window.login = function() {
+            const pwd = document.getElementById('passwordInput').value;
+            if (pwd === SUPER_ADMIN_PASSWORD) {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                document.getElementById('logoutBtn').style.display = 'block';
+                document.getElementById('addBtn').style.display = 'block';
+                loadClients();
+            } else {
+                alert('❌ Wrong password!');
+            }
+        };
+
+        window.logout = function() {
+            document.getElementById('loginScreen').style.display = 'block';
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('logoutBtn').style.display = 'none';
+            document.getElementById('addBtn').style.display = 'none';
+            document.getElementById('passwordInput').value = '';
+        };
+
+        window.switchTab = function(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            const tabs = ['clients', 'analytics', 'billing', 'config'];
+            const index = tabs.indexOf(tab);
+            document.querySelectorAll('.tab')[index].classList.add('active');
+            document.getElementById(tab + 'Tab').classList.add('active');
+
+            if (tab === 'analytics') loadAnalytics();
+            if (tab === 'billing') loadBilling();
+        };
+
+        async function loadClients() {
+            try {
+                const snapshot = await getDocs(collection(db, 'clients'));
+                clients = [];
+                snapshot.forEach(doc => {
+                    clients.push({ id: doc.id, ...doc.data() });
+                });
+                calculatePlatformStats();
+                renderClients();
+            } catch (error) {
+                console.error('Error loading clients:', error);
+            }
+        }
+
+        function calculatePlatformStats() {
+            platformStats.totalSpins = clients.reduce((sum, c) => sum + (c.totalSpins || 0), 0);
+            platformStats.totalUsers = clients.reduce((sum, c) => sum + (c.uniqueUsers || 0), 0);
+            
+            const monthlyRevenue = clients.reduce((sum, c) => {
+                if (c.status === 'active' || c.status === 'trial') {
+                    const planPrice = PLAN_PRICES[c.plan] || 0;
+                    return sum + (planPrice / 12);
+                }
+                return sum;
+            }, 0);
+            platformStats.totalRevenue = Math.round(monthlyRevenue);
+
+            document.getElementById('totalClients').textContent = clients.length;
+            document.getElementById('activeClients').textContent = clients.filter(c => c.status === 'active' || c.status === 'trial').length;
+            document.getElementById('totalRevenue').textContent = platformStats.totalRevenue.toLocaleString();
+        }
+
+        function renderClients() {
+            const grid = document.getElementById('clientsGrid');
+            
+            if (clients.length === 0) {
+                grid.innerHTML = `<div class="empty-state"><h3>No clients yet</h3><p style="color: #999;">Click the + button to add your first client</p></div>`;
+                return;
+            }
+
+            grid.innerHTML = clients.map(client => {
+                const expiryDate = client.expiresAt ? new Date(client.expiresAt).toLocaleDateString() : 'N/A';
+                const daysLeft = client.expiresAt ? Math.ceil((new Date(client.expiresAt) - new Date()) / (1000 * 60 * 60 * 24)) : 0;
+                
+                return `
+                    <div class="client-card">
+                        <span class="status ${client.status}">${client.status.toUpperCase()}</span>
+                        <h3>${client.name}</h3>
+                        <div class="subdomain">${client.subdomain}.kataflam-spin.com</div>
+                        <div class="client-stats">
+                            <div class="stat"><div class="number">${client.totalSpins || 0}</div><div class="label">Total Spins</div></div>
+                            <div class="stat"><div class="number">${client.uniqueUsers || 0}</div><div class="label">Users</div></div>
+                        </div>
+                        <div style="padding: 10px; background: #f8f9fa; border-radius: 8px; margin: 10px 0; font-size: 0.9em;">
+                            <strong>Plan:</strong> ${client.plan} <br>
+                            <strong>Expires:</strong> ${expiryDate} (${daysLeft} days)
+                        </div>
+                        <div class="client-actions">
+                            <button onclick="viewClient('${client.id}')" class="secondary">👁️</button>
+                            <button onclick="deleteClient('${client.id}')" class="danger">🗑️</button>
+                            <button onclick="openWheelInNewTab('${client.subdomain}')" class="success">🚀 Open</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function loadAnalytics() {
+            document.getElementById('analyticsSpins').textContent = platformStats.totalSpins.toLocaleString();
+            document.getElementById('analyticsUsers').textContent = platformStats.totalUsers.toLocaleString();
+            document.getElementById('analyticsActiveClients').textContent = clients.filter(c => c.status === 'active').length;
+            document.getElementById('analyticsRevenue').textContent = platformStats.totalRevenue.toLocaleString() + ' EGP';
+
+            const dailyData = generateDailySpinsData();
+            renderDailyChart(dailyData);
+            renderTopClients();
+        }
+
+        function generateDailySpinsData() {
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            return days.map(day => ({
+                label: day,
+                value: Math.floor(platformStats.totalSpins / 7) + Math.random() * 20
+            }));
+        }
+
+        function renderDailyChart(data) {
+            const container = document.getElementById('dailySpinsChart');
+            const maxValue = Math.max(...data.map(d => d.value));
+            
+            container.innerHTML = data.map(d => {
+                const height = (d.value / maxValue) * 250;
+                return `<div class="chart-bar" style="height: ${height}px;"><div class="value">${Math.round(d.value)}</div><div class="label">${d.label}</div></div>`;
+            }).join('');
+        }
+
+        function renderTopClients() {
+            const topClients = [...clients].sort((a, b) => (b.totalSpins || 0) - (a.totalSpins || 0)).slice(0, 5);
+            const tbody = document.getElementById('topClientsTable');
+            
+            if (topClients.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 40px; color: #999;">No clients data yet</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = topClients.map(client => {
+                const conversion = client.totalSpins > 0 ? ((client.uniqueUsers / client.totalSpins) * 100).toFixed(1) : 0;
+                return `
+                    <tr>
+                        <td><strong>${client.name}</strong></td>
+                        <td>${(client.totalSpins || 0).toLocaleString()}</td>
+                        <td>${(client.uniqueUsers || 0).toLocaleString()}</td>
+                        <td>${conversion}%</td>
+                        <td><span class="badge ${client.status}">${client.plan}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function loadBilling() {
+            let mrr = 0, arr = 0, paidThisMonth = 0, pending = 0;
+
+            clients.forEach(client => {
+                const planPrice = PLAN_PRICES[client.plan] || 0;
+                if (client.status === 'active') {
+                    mrr += planPrice / 12;
+                    arr += planPrice;
+                    paidThisMonth += planPrice / 12;
+                } else if (client.status === 'trial') {
+                    pending += PLAN_PRICES['starter'] / 12;
+                }
+            });
+
+            document.getElementById('billingMRR').textContent = Math.round(mrr).toLocaleString() + ' EGP';
+            document.getElementById('billingARR').textContent = Math.round(arr).toLocaleString() + ' EGP';
+            document.getElementById('billingPaid').textContent = Math.round(paidThisMonth).toLocaleString() + ' EGP';
+            document.getElementById('billingPending').textContent = Math.round(pending).toLocaleString() + ' EGP';
+
+            renderBillingTable();
+        }
+
+        function renderBillingTable() {
+            const tbody = document.getElementById('billingTable');
+            
+            if (clients.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 40px; color: #999;">No billing data yet</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = clients.map(client => {
+                const planPrice = PLAN_PRICES[client.plan] || 0;
+                const monthlyPrice = Math.round(planPrice / 12);
+                const nextPayment = client.expiresAt ? new Date(client.expiresAt).toLocaleDateString() : 'N/A';
+                
+                let paymentStatus = 'paid';
+                if (client.status === 'trial') paymentStatus = 'pending';
+                if (client.status === 'expired') paymentStatus = 'overdue';
+
+                return `
+                    <tr>
+                        <td><strong>${client.name}</strong></td>
+                        <td>${client.plan}</td>
+                        <td>${monthlyPrice.toLocaleString()} EGP/mo</td>
+                        <td><span class="badge ${paymentStatus}">${paymentStatus.toUpperCase()}</span></td>
+                        <td>${nextPayment}</td>
+                        <td><button onclick="viewInvoice('${client.id}')" style="padding: 5px 10px; font-size: 0.9em;">📄 Invoice</button></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        window.viewInvoice = function(clientId) {
+            const client = clients.find(c => c.id === clientId);
+            if (!client) return;
+            const planPrice = PLAN_PRICES[client.plan] || 0;
+            alert(`📄 Invoice for ${client.name}\n\nPlan: ${client.plan}\nAnnual: ${planPrice.toLocaleString()} EGP\nMonthly: ${Math.round(planPrice/12).toLocaleString()} EGP\n\nStatus: ${client.status}\nExpires: ${new Date(client.expiresAt).toLocaleDateString()}`);
+        };
+
+        window.showAddClientModal = function() {
+            document.getElementById('addClientModal').style.display = 'flex';
+        };
+
+        window.closeModal = function(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        };
+
+        window.createClient = async function(event) {
+            const createBtn = document.getElementById('createClientBtn');
+            if (createBtn.disabled) return;
+            
+            const name = document.getElementById('clientName').value;
+            const subdomain = document.getElementById('clientSubdomain').value.toLowerCase().trim();
+            const plan = document.getElementById('clientPlan').value;
+            const duration = parseInt(document.getElementById('clientDuration').value);
+            const email = document.getElementById('clientEmail').value;
+            const phone = document.getElementById('clientPhone').value;
+            const notes = document.getElementById('clientNotes').value;
+
+            if (!name || !subdomain) {
+                alert('❌ Please fill required fields');
+                return;
+            }
+
+            if (clients.find(c => c.subdomain === subdomain)) {
+                alert('❌ Subdomain already exists!');
+                return;
+            }
+
+            createBtn.disabled = true;
+            createBtn.textContent = '⏳ Creating...';
+            createBtn.style.opacity = '0.6';
+
+            try {
+                const clientId = 'client_' + Date.now();
+                const expiresAt = new Date();
+                expiresAt.setMonth(expiresAt.getMonth() + duration);
+
+                const batch = writeBatch(db);
+
+                batch.set(doc(db, 'clients', clientId), {
+                    name, subdomain, plan,
+                    status: plan === 'trial' ? 'trial' : 'active',
+                    createdAt: new Date().toISOString(),
+                    expiresAt: expiresAt.toISOString(),
+                    email, phone, notes,
+                    totalSpins: 0,
+                    uniqueUsers: 0
+                });
+
+                batch.set(doc(db, 'wheels', clientId), {
+                    brandColors: { primary: '#667eea', secondary: '#764ba2' },
+                    logo: '',
+                    segments: [
+                        { text: '20% OFF', color: '#FF6B9D', probability: 15, vouchers: '' },
+                        { text: '10% OFF', color: '#4D96FF', probability: 25, vouchers: '' },
+                        { text: 'Try Again', color: '#FF5757', probability: 60, vouchers: '' }
+                    ],
+                    spinLimit: { type: 'once_per_user' }
+                });
+
+                await batch.commit();
+                alert('✅ Client created!\n\nURL:\nhttps://kataflam-client-wheel.vercel.app/?client=' + subdomain);
+                closeModal('addClientModal');
+                loadClients();
+                
+                document.getElementById('clientName').value = '';
+                document.getElementById('clientSubdomain').value = '';
+                document.getElementById('clientEmail').value = '';
+                document.getElementById('clientPhone').value = '';
+                document.getElementById('clientNotes').value = '';
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            } finally {
+                createBtn.disabled = false;
+                createBtn.textContent = 'Create Client';
+                createBtn.style.opacity = '1';
+            }
+        };
+
+        window.viewClient = function(clientId) {
+            const client = clients.find(c => c.id === clientId);
+            if (!client) return;
+            alert(`📋 ${client.name}\n\nSubdomain: ${client.subdomain}\nStatus: ${client.status}\nPlan: ${client.plan}\n\nURL:\nhttps://kataflam-client-wheel.vercel.app/?client=${client.subdomain}`);
+        };
+
+        window.deleteClient = async function(clientId) {
+            const client = clients.find(c => c.id === clientId);
+            if (!client) return;
+            
+            if (!confirm(`⚠️ Delete "${client.name}"?\n\nThis cannot be undone!`)) return;
+            if (!confirm('Are you SURE?')) return;
+
+            try {
+                const batch = writeBatch(db);
+                batch.delete(doc(db, 'clients', clientId));
+                batch.delete(doc(db, 'wheels', clientId));
+                batch.delete(doc(db, 'analytics', clientId));
+                await batch.commit();
+                
+                try {
+                    const spinsSnapshot = await getDocs(collection(db, 'spins'));
+                    const spinBatch = writeBatch(db);
+                    spinsSnapshot.forEach(spinDoc => {
+                        if (spinDoc.id.startsWith(clientId + '_')) {
+                            spinBatch.delete(spinDoc.ref);
+                        }
+                    });
+                    await spinBatch.commit();
+                } catch(e) {}
+                
+                alert('✅ Client deleted!');
+                loadClients();
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        };
+
+        window.openWheelInNewTab = function(subdomain) {
+            window.open(`https://kataflam-client-wheel.vercel.app/?client=${subdomain}`, '_blank');
+        };
+
+        window.saveDefaultColors = function() {
+            localStorage.setItem('defaultPrimaryColor', document.getElementById('defaultPrimaryColor').value);
+            localStorage.setItem('defaultSecondaryColor', document.getElementById('defaultSecondaryColor').value);
+            alert('✅ Default colors saved!');
+        };
+
+        window.saveEmailSettings = function() {
+            localStorage.setItem('platformEmail', document.getElementById('platformEmail').value);
+            localStorage.setItem('supportEmail', document.getElementById('supportEmail').value);
+            alert('✅ Email settings saved!');
+        };
+
+        window.savePaymentSettings = function() {
+            localStorage.setItem('currency', document.getElementById('currency').value);
+            localStorage.setItem('trialPeriod', document.getElementById('trialPeriod').value);
+            alert('✅ Payment settings saved!');
+        };
+
+        window.changePassword = function() {
+            const newPwd = document.getElementById('newPassword').value;
+            const confirmPwd = document.getElementById('confirmPassword').value;
+            
+            if (!newPwd || newPwd.length < 8) {
+                alert('❌ Password must be 8+ characters!');
+                return;
+            }
+            
+            if (newPwd !== confirmPwd) {
+                alert('❌ Passwords do not match!');
+                return;
+            }
+            
+            alert('⚠️ Password change disabled in demo.\n\nIn production, this would update Firebase Authentication.');
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+        };
+
+        function loadSettings() {
+            if (localStorage.getItem('defaultPrimaryColor')) 
+                document.getElementById('defaultPrimaryColor').value = localStorage.getItem('defaultPrimaryColor');
+            if (localStorage.getItem('defaultSecondaryColor')) 
+                document.getElementById('defaultSecondaryColor').value = localStorage.getItem('defaultSecondaryColor');
+            if (localStorage.getItem('platformEmail')) 
+                document.getElementById('platformEmail').value = localStorage.getItem('platformEmail');
+            if (localStorage.getItem('supportEmail')) 
+                document.getElementById('supportEmail').value = localStorage.getItem('supportEmail');
+            if (localStorage.getItem('currency')) 
+                document.getElementById('currency').value = localStorage.getItem('currency');
+            if (localStorage.getItem('trialPeriod')) 
+                document.getElementById('trialPeriod').value = localStorage.getItem('trialPeriod');
+        }
+
+        loadSettings();
+    </script>
+</body>
+</html>
