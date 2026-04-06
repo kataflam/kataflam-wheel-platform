@@ -435,12 +435,13 @@
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
                 
-                if (!user.emailVerified) {
-                    showAlert('⚠️ Please verify your email first. Check your inbox!', 'error');
-                    btn.disabled = false;
-                    btn.textContent = '🔓 Login';
-                    return;
-                }
+                // Email verification disabled for easier onboarding
+                // if (!user.emailVerified) {
+                //     showAlert('⚠️ Please verify your email first. Check your inbox!', 'error');
+                //     btn.disabled = false;
+                //     btn.textContent = '🔓 Login';
+                //     return;
+                // }
                 
                 showAlert('✅ Login successful! Redirecting...', 'success');
                 setTimeout(() => {
@@ -487,18 +488,17 @@
                     plan: 'trial',
                     status: 'trial',
                     createdAt: new Date().toISOString(),
-                    emailVerified: false
+                    emailVerified: true // Auto-verified for easier onboarding
                 });
 
-                // Send verification email
-                await sendEmailVerification(user);
+                // Email verification disabled - redirect directly to dashboard
+                // await sendEmailVerification(user);
                 
-                showAlert('✅ Account created! Please check your email to verify your account.', 'success');
+                showAlert('✅ Account created! Redirecting to dashboard...', 'success');
                 
                 setTimeout(() => {
-                    switchAuthTab('login');
-                    document.getElementById('loginEmail').value = email;
-                }, 3000);
+                    window.location.href = 'dashboard.html';
+                }, 1500);
                 
             } catch (error) {
                 console.error('Signup error:', error);
