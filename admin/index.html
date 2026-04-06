@@ -582,11 +582,51 @@
 
         async function loadClients() {
             try {
-                const snapshot = await getDocs(collection(db, 'clients'));
                 clients = [];
-                snapshot.forEach(doc => {
-                    clients.push({ id: doc.id, ...doc.data() });
+                
+                // Load manual clients from /clients collection
+                const clientsSnapshot = await getDocs(collection(db, 'clients'));
+                clientsSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    clients.push({ 
+                        id: doc.id, 
+                        type: 'manual', // Manual client created by Super Admin
+                        name: data.name,
+                        subdomain: data.subdomain,
+                        plan: data.plan,
+                        status: data.status,
+                        email: data.email || 'N/A',
+                        phone: data.phone || 'N/A',
+                        createdAt: data.createdAt,
+                        expiresAt: data.expiresAt,
+                        totalSpins: data.totalSpins || 0,
+                        uniqueUsers: data.uniqueUsers || 0
+                    });
                 });
+                
+                // Load self-service users from /users collection
+                const usersSnapshot = await getDocs(collection(db, 'users'));
+                usersSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    clients.push({ 
+                        id: doc.id, 
+                        type: 'self-service', // Self-service signup
+                        name: data.companyName || 'Unknown Company',
+                        subdomain: 'user-' + doc.id.substring(0, 8), // Auto-generate subdomain
+                        plan: data.plan || 'trial',
+                        status: data.status || 'trial',
+                        email: data.email || 'N/A',
+                        phone: 'N/A',
+                        createdAt: data.createdAt,
+                        expiresAt: data.expiresAt || new Date(Date.now() + 7*24*60*60*1000).toISOString(), // 7 days from now
+                        totalSpins: 0,
+                        uniqueUsers: 0
+                    });
+                });
+                
+                // Sort by creation date (newest first)
+                clients.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                
                 calculatePlatformStats();
                 renderClients();
             } catch (error) {
@@ -629,6 +669,16 @@
                         <span class="status ${client.status}">${client.status.toUpperCase()}</span>
                         <h3>${client.name}</h3>
                         <div class="subdomain">${client.subdomain}.kataflam-spin.com</div>
+                        
+                        ${client.type === 'self-service' ? 
+                            `<div style="display: inline-block; padding: 4px 10px; background: #e3f2fd; color: #1976d2; border-radius: 12px; font-size: 0.75em; font-weight: bold; margin: 8px 0;">
+                                ✨ SELF-SERVICE SIGNUP
+                            </div>` : 
+                            `<div style="display: inline-block; padding: 4px 10px; background: #f3e5f5; color: #7b1fa2; border-radius: 12px; font-size: 0.75em; font-weight: bold; margin: 8px 0;">
+                                🔧 MANUAL CLIENT
+                            </div>`
+                        }
+                        
                         <div class="client-stats">
                             <div class="stat"><div class="number">${client.totalSpins || 0}</div><div class="label">Total Spins</div></div>
                             <div class="stat"><div class="number">${client.uniqueUsers || 0}</div><div class="label">Users</div></div>
