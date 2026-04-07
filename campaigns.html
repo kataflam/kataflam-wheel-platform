@@ -599,11 +599,16 @@
         };
 
         window.editCampaign = function(campaignId) {
-            alert('✏️ Edit campaign feature coming in Week 5!');
+            window.location.href = `edit-campaign.html?id=${campaignId}`;
         };
 
         window.viewWheel = function(campaignId) {
-            alert('🎡 View wheel feature coming in Week 5!');
+            // Get campaign
+            const campaign = campaigns.find(c => c.id === campaignId);
+            if (!campaign) return;
+            
+            // For now, show alert with campaign details
+            alert(`🎡 View Wheel\n\nCampaign: ${campaign.name}\n\nLive wheel viewer coming in Week 5!\n\nFor now, you can:\n1. Edit the campaign\n2. Test the wheel in the editor`);
         };
 
         window.deleteCampaign = async function(campaignId) {
