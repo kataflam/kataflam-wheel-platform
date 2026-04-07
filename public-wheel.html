@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spin & Win!</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: linear-gradient(135deg, var(--primary-color, #667eea) 0%, var(--secondary-color, #764ba2) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            border-radius: 30px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+            margin-bottom: 30px;
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            aspect-ratio: 1;
+            margin: 30px auto;
+        }
+
+        .wheel-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .wheel {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+        }
+
+        .wheel.spinning {
+            transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+        }
+
+        .segment {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            transform-origin: 100% 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-size: 1.1em;
+        }
+
+        .wheel-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            z-index: 10;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .wheel-center:hover {
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        .wheel-center.disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .pointer {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 35px solid #dc3545;
+            z-index: 11;
+            filter: drop-shadow(0 2px 5px rgba(0,0,0,0.3));
+        }
+
+        .spin-button {
+            background: linear-gradient(135deg, var(--primary-color, #667eea), var(--secondary-color, #764ba2));
+            color: white;
+            border: none;
+            padding: 18px 50px;
+            border-radius: 50px;
+            font-size: 1.3em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            margin-top: 20px;
+        }
+
+        .spin-button:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .spin-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .result-modal.show {
+            display: flex;
+        }
+
+        .result-content {
+            background: white;
+            padding: 50px;
+            border-radius: 30px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            animation: popIn 0.5s;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .result-icon {
+            font-size: 5em;
+            margin-bottom: 20px;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .result-title {
+            font-size: 2.5em;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .result-prize {
+            font-size: 3em;
+            background: linear-gradient(135deg, var(--primary-color, #667eea), var(--secondary-color, #764ba2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .voucher-code {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 2px dashed #667eea;
+        }
+
+        .voucher-code .label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .voucher-code .code {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #333;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 3px;
+        }
+
+        .close-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .already-spun {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            color: #856404;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: white;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid rgba(255,255,255,0.3);
+            border-top: 6px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            color: #dc3545;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 20px; }
+            h1 { font-size: 1.8em; }
+            .wheel-container { max-width: 300px; }
+            .result-content { padding: 30px; }
+            .result-prize { font-size: 2em; }
+        }
+    </style>
+</head>
+<body>
+    <div id="loadingState" class="loading">
+        <div class="spinner"></div>
+        <h2>Loading wheel...</h2>
+    </div>
+
+    <div id="errorState" style="display: none;">
+        <div class="error">
+            <h2>❌ Error</h2>
+            <p id="errorMessage">Campaign not found!</p>
+        </div>
+    </div>
+
+    <div id="wheelContent" class="container" style="display: none;">
+        <h1 id="campaignTitle">Spin & Win!</h1>
+        <p class="subtitle" id="campaignDescription">Try your luck!</p>
+
+        <div class="wheel-container">
+            <div class="wheel-wrapper">
+                <div class="pointer"></div>
+                <div class="wheel" id="wheel">
+                    <!-- Segments loaded here -->
+                </div>
+                <div class="wheel-center" id="spinButton" onclick="spin()">
+                    🎁
+                </div>
+            </div>
+        </div>
+
+        <button class="spin-button" id="mainSpinButton" onclick="spin()">
+            🎲 SPIN THE WHEEL!
+        </button>
+
+        <div id="alreadySpun" class="already-spun" style="display: none;">
+            ⚠️ You've already spun this wheel!<br>
+            <strong>Your prize: <span id="previousPrize"></span></strong>
+        </div>
+    </div>
+
+    <div class="result-modal" id="resultModal">
+        <div class="result-content">
+            <div class="result-icon">🎉</div>
+            <h2 class="result-title">Congratulations!</h2>
+            <div class="result-prize" id="resultPrize">20% OFF</div>
+            
+            <div id="voucherSection" style="display: none;">
+                <div class="voucher-code">
+                    <div class="label">Your Voucher Code:</div>
+                    <div class="code" id="voucherCode">SAVE20</div>
+                </div>
+                <p style="color: #666; font-size: 0.9em;">
+                    💾 Screenshot this code or write it down!
+                </p>
+            </div>
+
+            <button class="close-button" onclick="closeResult()">
+                Got it! ✨
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD0LKrnMv-hhM5_uzKeGvjOf-yOXt7rVmM",
+            authDomain: "kataflam-white-label.firebaseapp.com",
+            projectId: "kataflam-white-label",
+            storageBucket: "kataflam-white-label.firebasestorage.app",
+            messagingSenderId: "571581972788",
+            appId: "1:571581972788:web:7bb7cc53145a425e40a561"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let campaignId = null;
+        let campaignData = null;
+        let segments = [];
+        let hasSpun = false;
+        let spinning = false;
+        let userId = null;
+
+        // Get campaign ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        campaignId = urlParams.get('campaign');
+
+        if (!campaignId) {
+            showError('No campaign ID provided!');
+        } else {
+            loadCampaign();
+        }
+
+        // Generate or get user ID
+        userId = localStorage.getItem('wheelUserId');
+        if (!userId) {
+            userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('wheelUserId', userId);
+        }
+
+        async function loadCampaign() {
+            try {
+                const campaignDoc = await getDoc(doc(db, 'campaigns', campaignId));
+                
+                if (!campaignDoc.exists()) {
+                    showError('Campaign not found!');
+                    return;
+                }
+
+                campaignData = campaignDoc.data();
+
+                // Check if paused
+                if (campaignData.status === 'paused') {
+                    showError('This campaign is currently paused!');
+                    return;
+                }
+
+                // Load campaign details
+                document.getElementById('campaignTitle').textContent = campaignData.name;
+                document.getElementById('campaignDescription').textContent = campaignData.description || 'Try your luck!';
+
+                // Set brand colors
+                const colors = campaignData.wheelConfig?.brandColors || { primary: '#667eea', secondary: '#764ba2' };
+                document.documentElement.style.setProperty('--primary-color', colors.primary);
+                document.documentElement.style.setProperty('--secondary-color', colors.secondary);
+
+                // Load segments
+                segments = campaignData.wheelConfig?.segments || [];
+                
+                if (segments.length === 0) {
+                    showError('No segments configured!');
+                    return;
+                }
+
+                renderWheel();
+
+                // Check if already spun
+                const spinKey = `spin_${campaignId}_${userId}`;
+                const previousSpin = localStorage.getItem(spinKey);
+                
+                if (previousSpin) {
+                    hasSpun = true;
+                    const spinData = JSON.parse(previousSpin);
+                    document.getElementById('previousPrize').textContent = spinData.prize;
+                    document.getElementById('alreadySpun').style.display = 'block';
+                    document.getElementById('spinButton').classList.add('disabled');
+                    document.getElementById('mainSpinButton').disabled = true;
+                    document.getElementById('mainSpinButton').textContent = '✅ Already Spun';
+                }
+
+                // Show wheel
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('wheelContent').style.display = 'block';
+
+            } catch (error) {
+                console.error('Error loading campaign:', error);
+                showError('Error loading campaign!');
+            }
+        }
+
+        function renderWheel() {
+            const wheel = document.getElementById('wheel');
+            const anglePerSegment = 360 / segments.length;
+            
+            wheel.innerHTML = segments.map((segment, index) => {
+                const rotation = anglePerSegment * index;
+                return `
+                    <div class="segment" style="
+                        background: ${segment.color};
+                        transform: rotate(${rotation}deg) skewY(${-90 + anglePerSegment}deg);
+                    ">
+                        <span style="
+                            transform: skewY(${90 - anglePerSegment}deg) rotate(${anglePerSegment/2}deg);
+                            display: block;
+                            padding: 10px;
+                        ">
+                            ${segment.text}
+                        </span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.spin = async function() {
+            if (hasSpun || spinning) return;
+
+            spinning = true;
+            document.getElementById('spinButton').classList.add('disabled');
+            document.getElementById('mainSpinButton').disabled = true;
+            document.getElementById('mainSpinButton').textContent = '🎲 Spinning...';
+
+            // Select prize based on probability
+            const selectedSegment = selectPrize();
+            const segmentIndex = segments.indexOf(selectedSegment);
+            const anglePerSegment = 360 / segments.length;
+            
+            // Calculate rotation to land on selected segment
+            const baseRotation = 720 + (Math.random() * 360); // 2-3 full rotations
+            const segmentAngle = segmentIndex * anglePerSegment;
+            const targetRotation = baseRotation + (360 - segmentAngle) + (anglePerSegment / 2);
+
+            const wheel = document.getElementById('wheel');
+            wheel.style.transform = `rotate(${targetRotation}deg)`;
+
+            // Wait for spin to complete
+            setTimeout(async () => {
+                await showResult(selectedSegment);
+                spinning = false;
+                hasSpun = true;
+            }, 4000);
+        };
+
+        function selectPrize() {
+            const random = Math.random() * 100;
+            let cumulativeProbability = 0;
+
+            for (const segment of segments) {
+                cumulativeProbability += segment.probability || 0;
+                if (random <= cumulativeProbability) {
+                    return segment;
+                }
+            }
+
+            return segments[0]; // Fallback
+        }
+
+        async function showResult(segment) {
+            // Select voucher if available
+            let voucher = null;
+            if (segment.vouchers && segment.vouchers.trim()) {
+                const voucherList = segment.vouchers.split('\n').filter(v => v.trim());
+                if (voucherList.length > 0) {
+                    voucher = voucherList[Math.floor(Math.random() * voucherList.length)];
+                }
+            }
+
+            // Save spin
+            const spinKey = `spin_${campaignId}_${userId}`;
+            const spinData = {
+                prize: segment.text,
+                voucher: voucher,
+                timestamp: new Date().toISOString()
+            };
+            localStorage.setItem(spinKey, JSON.stringify(spinData));
+
+            // Save to Firebase
+            try {
+                await setDoc(doc(db, 'spins', `${campaignId}_${userId}`), {
+                    campaignId: campaignId,
+                    userId: userId,
+                    prize: segment.text,
+                    voucher: voucher,
+                    timestamp: new Date().toISOString()
+                });
+
+                // Update campaign stats
+                await updateDoc(doc(db, 'campaigns', campaignId), {
+                    totalSpins: increment(1)
+                });
+
+            } catch (error) {
+                console.error('Error saving spin:', error);
+            }
+
+            // Show result modal
+            document.getElementById('resultPrize').textContent = segment.text;
+            
+            if (voucher) {
+                document.getElementById('voucherCode').textContent = voucher;
+                document.getElementById('voucherSection').style.display = 'block';
+            } else {
+                document.getElementById('voucherSection').style.display = 'none';
+            }
+
+            document.getElementById('resultModal').classList.add('show');
+        }
+
+        window.closeResult = function() {
+            document.getElementById('resultModal').classList.remove('show');
+            document.getElementById('alreadySpun').style.display = 'block';
+            document.getElementById('previousPrize').textContent = JSON.parse(localStorage.getItem(`spin_${campaignId}_${userId}`)).prize;
+            document.getElementById('mainSpinButton').textContent = '✅ Already Spun';
+        };
+
+        function showError(message) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorState').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
