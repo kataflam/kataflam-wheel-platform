@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - Kataflam</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px 20px;
+            color: white;
+        }
+
+        .sidebar .logo {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 40px;
+        }
+
+        .sidebar nav {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .sidebar nav a {
+            color: white;
+            text-decoration: none;
+            padding: 12px 15px;
+            border-radius: 10px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar nav a:hover,
+        .sidebar nav a.active {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .sidebar .user-info {
+            position: absolute;
+            bottom: 30px;
+            left: 20px;
+            right: 20px;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            padding: 30px;
+        }
+
+        .header {
+            background: white;
+            padding: 25px 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 1.8em;
+        }
+
+        .filters {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .filters select {
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #764ba2;
+        }
+
+        button.secondary {
+            background: #28a745;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .stat-card .label {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-card .change {
+            color: #28a745;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .chart-card h3 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .data-table {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table th,
+        table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        table th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #333;
+        }
+
+        table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #666;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: #666;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .badge.active {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .badge.paused {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">🎡 Kataflam</div>
+        
+        <nav>
+            <a href="dashboard.html">
+                <span>📊</span> Dashboard
+            </a>
+            <a href="campaigns.html">
+                <span>🎡</span> My Campaigns
+            </a>
+            <a href="#" onclick="alert('Coming soon!')">
+                <span>➕</span> Create New
+            </a>
+            <a href="analytics.html" class="active">
+                <span>📈</span> Analytics
+            </a>
+            <a href="#" onclick="alert('Coming soon!')">
+                <span>🔗</span> Integrations
+            </a>
+            <a href="dashboard.html">
+                <span>⚙️</span> Settings
+            </a>
+        </nav>
+
+        <div class="user-info">
+            <div class="name" id="userName">Loading...</div>
+            <div class="plan" id="userPlan">Loading...</div>
+            <button class="secondary" onclick="logout()" style="width: 100%; margin-top: 10px; padding: 8px; font-size: 0.9em; background: rgba(255,255,255,0.2); border: none;">
+                🚪 Logout
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="header">
+            <div>
+                <h1>📈 Analytics Dashboard</h1>
+                <p style="color: #666; margin-top: 5px;">Track your campaign performance</p>
+            </div>
+            <div class="filters">
+                <select id="campaignFilter" onchange="loadAnalytics()">
+                    <option value="all">All Campaigns</option>
+                </select>
+                <button class="secondary" onclick="exportData()">
+                    📥 Export CSV
+                </button>
+            </div>
+        </div>
+
+        <div id="loadingState" class="loading">
+            <div class="spinner"></div>
+            <p>Loading analytics...</p>
+        </div>
+
+        <div id="analyticsContent" style="display: none;">
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="label">Total Spins</div>
+                    <div class="value" id="totalSpins">0</div>
+                    <div class="change" id="spinsChange">+0% this week</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Unique Users</div>
+                    <div class="value" id="uniqueUsers">0</div>
+                    <div class="change" id="usersChange">+0% this week</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Active Campaigns</div>
+                    <div class="value" id="activeCampaigns">0</div>
+                    <div class="change">Live now</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Avg Spins/User</div>
+                    <div class="value" id="avgSpins">0</div>
+                    <div class="change">Engagement rate</div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="chart-grid">
+                <div class="chart-card">
+                    <h3>📊 Spins Over Time</h3>
+                    <canvas id="spinsChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>🎁 Prize Distribution</h3>
+                    <canvas id="prizeChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Campaign Performance Table -->
+            <div class="data-table">
+                <h3 style="margin-bottom: 20px;">🎯 Campaign Performance</h3>
+                <table id="campaignTable">
+                    <thead>
+                        <tr>
+                            <th>Campaign</th>
+                            <th>Status</th>
+                            <th>Total Spins</th>
+                            <th>Unique Users</th>
+                            <th>Engagement</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody id="campaignTableBody">
+                        <!-- Data loaded here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Recent Spins -->
+            <div class="data-table" style="margin-top: 30px;">
+                <h3 style="margin-bottom: 20px;">🎡 Recent Spins</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Campaign</th>
+                            <th>Prize</th>
+                            <th>Voucher</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentSpinsBody">
+                        <!-- Data loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <h2>📊 No Data Yet</h2>
+            <p>Create your first campaign to see analytics!</p>
+            <button onclick="window.location.href='campaigns.html'" style="margin-top: 20px;">
+                Create Campaign
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, collection, query, where, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD0LKrnMv-hhM5_uzKeGvjOf-yOXt7rVmM",
+            authDomain: "kataflam-white-label.firebaseapp.com",
+            projectId: "kataflam-white-label",
+            storageBucket: "kataflam-white-label.firebasestorage.app",
+            messagingSenderId: "571581972788",
+            appId: "1:571581972788:web:7bb7cc53145a425e40a561"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let userData = null;
+        let campaigns = [];
+        let allSpins = [];
+        let spinsChart = null;
+        let prizeChart = null;
+
+        // Check authentication
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            currentUser = user;
+            await loadUserData();
+            await loadAnalytics();
+        });
+
+        async function loadUserData() {
+            try {
+                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                
+                if (userDoc.exists()) {
+                    userData = userDoc.data();
+                    document.getElementById('userName').textContent = userData.companyName || 'My Company';
+                    document.getElementById('userPlan').textContent = (userData.plan || 'trial').charAt(0).toUpperCase() + (userData.plan || 'trial').slice(1) + ' Plan';
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+            }
+        }
+
+        window.loadAnalytics = async function() {
+            try {
+                document.getElementById('loadingState').style.display = 'block';
+                document.getElementById('analyticsContent').style.display = 'none';
+                document.getElementById('emptyState').style.display = 'none';
+
+                // Load campaigns
+                const campaignsQuery = query(collection(db, 'campaigns'), where('userId', '==', currentUser.uid));
+                const campaignsSnapshot = await getDocs(campaignsQuery);
+                
+                campaigns = [];
+                campaignsSnapshot.forEach(doc => {
+                    campaigns.push({ id: doc.id, ...doc.data() });
+                });
+
+                if (campaigns.length === 0) {
+                    document.getElementById('loadingState').style.display = 'none';
+                    document.getElementById('emptyState').style.display = 'block';
+                    return;
+                }
+
+                // Populate campaign filter
+                const filter = document.getElementById('campaignFilter');
+                filter.innerHTML = '<option value="all">All Campaigns</option>';
+                campaigns.forEach(campaign => {
+                    filter.innerHTML += `<option value="${campaign.id}">${campaign.name}</option>`;
+                });
+
+                // Load spins data
+                const selectedCampaign = filter.value;
+                let spinsQuery;
+                
+                if (selectedCampaign === 'all') {
+                    // Get all spins for user's campaigns
+                    const campaignIds = campaigns.map(c => c.id);
+                    spinsQuery = query(collection(db, 'spins'));
+                    const spinsSnapshot = await getDocs(spinsQuery);
+                    
+                    allSpins = [];
+                    spinsSnapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (campaignIds.includes(data.campaignId)) {
+                            allSpins.push({ id: doc.id, ...data });
+                        }
+                    });
+                } else {
+                    spinsQuery = query(collection(db, 'spins'), where('campaignId', '==', selectedCampaign));
+                    const spinsSnapshot = await getDocs(spinsQuery);
+                    
+                    allSpins = [];
+                    spinsSnapshot.forEach(doc => {
+                        allSpins.push({ id: doc.id, ...doc.data() });
+                    });
+                }
+
+                // Calculate stats
+                calculateStats();
+                renderCharts();
+                renderTables();
+
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('analyticsContent').style.display = 'block';
+
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+                document.getElementById('loadingState').innerHTML = '<p style="color: #dc3545;">Error loading analytics</p>';
+            }
+        };
+
+        function calculateStats() {
+            const totalSpins = allSpins.length;
+            const uniqueUserIds = [...new Set(allSpins.map(s => s.userId))];
+            const uniqueUsers = uniqueUserIds.length;
+            const activeCampaigns = campaigns.filter(c => c.status === 'active').length;
+            const avgSpins = uniqueUsers > 0 ? (totalSpins / uniqueUsers).toFixed(1) : 0;
+
+            document.getElementById('totalSpins').textContent = totalSpins;
+            document.getElementById('uniqueUsers').textContent = uniqueUsers;
+            document.getElementById('activeCampaigns').textContent = activeCampaigns;
+            document.getElementById('avgSpins').textContent = avgSpins;
+        }
+
+        function renderCharts() {
+            // Spins Over Time Chart
+            const spinsData = getSpinsOverTime();
+            const ctx1 = document.getElementById('spinsChart');
+            
+            if (spinsChart) spinsChart.destroy();
+            
+            spinsChart = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: spinsData.labels,
+                    datasets: [{
+                        label: 'Spins',
+                        data: spinsData.data,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            // Prize Distribution Chart
+            const prizeData = getPrizeDistribution();
+            const ctx2 = document.getElementById('prizeChart');
+            
+            if (prizeChart) prizeChart.destroy();
+            
+            prizeChart = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: prizeData.labels,
+                    datasets: [{
+                        data: prizeData.data,
+                        backgroundColor: [
+                            '#667eea',
+                            '#764ba2',
+                            '#f093fb',
+                            '#4facfe',
+                            '#43e97b'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true
+                }
+            });
+        }
+
+        function getSpinsOverTime() {
+            const last7Days = [];
+            const counts = [];
+            
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                const dateStr = date.toISOString().split('T')[0];
+                last7Days.push(dateStr);
+                
+                const daySpins = allSpins.filter(s => {
+                    const spinDate = new Date(s.timestamp).toISOString().split('T')[0];
+                    return spinDate === dateStr;
+                });
+                counts.push(daySpins.length);
+            }
+
+            return {
+                labels: last7Days.map(d => new Date(d).toLocaleDateString('en', { month: 'short', day: 'numeric' })),
+                data: counts
+            };
+        }
+
+        function getPrizeDistribution() {
+            const prizeCount = {};
+            
+            allSpins.forEach(spin => {
+                prizeCount[spin.prize] = (prizeCount[spin.prize] || 0) + 1;
+            });
+
+            return {
+                labels: Object.keys(prizeCount),
+                data: Object.values(prizeCount)
+            };
+        }
+
+        function renderTables() {
+            // Campaign Performance
+            const tbody = document.getElementById('campaignTableBody');
+            tbody.innerHTML = campaigns.map(campaign => {
+                const campaignSpins = allSpins.filter(s => s.campaignId === campaign.id);
+                const uniqueUsers = [...new Set(campaignSpins.map(s => s.userId))].length;
+                const engagement = uniqueUsers > 0 ? (campaignSpins.length / uniqueUsers).toFixed(1) : 0;
+                
+                return `
+                    <tr>
+                        <td>${campaign.name}</td>
+                        <td><span class="badge ${campaign.status}">${campaign.status}</span></td>
+                        <td>${campaign.totalSpins || 0}</td>
+                        <td>${campaign.uniqueUsers || 0}</td>
+                        <td>${engagement} spins/user</td>
+                        <td>${new Date(campaign.createdAt).toLocaleDateString()}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Recent Spins
+            const recentSpins = allSpins.slice(-10).reverse();
+            const spinsBody = document.getElementById('recentSpinsBody');
+            spinsBody.innerHTML = recentSpins.map(spin => {
+                const campaign = campaigns.find(c => c.id === spin.campaignId);
+                return `
+                    <tr>
+                        <td>${new Date(spin.timestamp).toLocaleString()}</td>
+                        <td>${campaign ? campaign.name : 'Unknown'}</td>
+                        <td>${spin.prize}</td>
+                        <td>${spin.voucher || '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        window.exportData = function() {
+            let csv = 'Campaign,Status,Total Spins,Unique Users,Created\n';
+            
+            campaigns.forEach(campaign => {
+                csv += `"${campaign.name}",${campaign.status},${campaign.totalSpins || 0},${campaign.uniqueUsers || 0},${new Date(campaign.createdAt).toLocaleDateString()}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `kataflam-analytics-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+        };
+
+        window.logout = async function() {
+            if (confirm('Are you sure you want to logout?')) {
+                try {
+                    await signOut(auth);
+                    window.location.href = 'index.html';
+                } catch (error) {
+                    console.error('Logout error:', error);
+                }
+            }
+        };
+    </script>
+</body>
+</html>
