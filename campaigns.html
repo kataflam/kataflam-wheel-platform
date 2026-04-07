@@ -416,6 +416,30 @@
         </div>
     </div>
 
+    <!-- Embed Code Modal -->
+    <div class="modal" id="embedModal">
+        <div class="modal-content" style="max-width: 700px;">
+            <h2>🔗 Embed Wheel</h2>
+            <p style="color: #666; margin-bottom: 20px;">Copy this code and paste it into your website:</p>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0; font-family: monospace; font-size: 0.9em; overflow-x: auto;">
+                <code id="embedCodeDisplay"></code>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button onclick="copyEmbedCode()" style="flex: 1;">
+                    📋 Copy Code
+                </button>
+                <button onclick="openWheelPreview()" class="success" style="flex: 1;">
+                    👁️ Preview Wheel
+                </button>
+                <button onclick="closeModal('embedModal')" class="secondary">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
@@ -606,23 +630,32 @@
             const campaign = campaigns.find(c => c.id === campaignId);
             if (!campaign) return;
             
-            // Show options modal
-            const wheelUrl = `${window.location.origin}/public-wheel.html?campaign=${campaignId}`;
-            const embedCode = `<iframe src="${wheelUrl}" width="600" height="700" frameborder="0" style="border-radius: 20px;"></iframe>`;
+            // Store for modal functions
+            window.currentWheelUrl = `${window.location.origin}/public-wheel.html?campaign=${campaignId}`;
+            window.currentEmbedCode = `<iframe src="${window.currentWheelUrl}" width="600" height="700" frameborder="0" style="border-radius: 20px;"></iframe>`;
             
-            const choice = confirm(`🎡 ${campaign.name}\n\n✅ Click OK to open live wheel\n❌ Click Cancel to copy embed code`);
-            
-            if (choice) {
-                // Open wheel in new tab
-                window.open(wheelUrl, '_blank');
-            } else {
-                // Copy embed code
-                navigator.clipboard.writeText(embedCode).then(() => {
-                    alert(`✅ Embed code copied!\n\nPaste this in your website:\n\n${embedCode}`);
-                }).catch(() => {
-                    prompt('📋 Copy this embed code:', embedCode);
-                });
-            }
+            // Show embed modal
+            document.getElementById('embedCodeDisplay').textContent = window.currentEmbedCode;
+            document.getElementById('embedModal').style.display = 'flex';
+        };
+
+        window.copyEmbedCode = function() {
+            navigator.clipboard.writeText(window.currentEmbedCode).then(() => {
+                alert('✅ Embed code copied to clipboard!');
+            }).catch(() => {
+                // Fallback
+                const textarea = document.createElement('textarea');
+                textarea.value = window.currentEmbedCode;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('✅ Embed code copied!');
+            });
+        };
+
+        window.openWheelPreview = function() {
+            window.open(window.currentWheelUrl, '_blank');
         };
 
         window.deleteCampaign = async function(campaignId) {

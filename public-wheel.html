@@ -546,10 +546,20 @@
                     timestamp: new Date().toISOString()
                 });
 
-                // Update campaign stats
-                await updateDoc(doc(db, 'campaigns', campaignId), {
-                    totalSpins: increment(1)
-                });
+                // Update campaign stats - track unique users
+                const campaignRef = doc(db, 'campaigns', campaignId);
+                const updates = { totalSpins: increment(1) };
+                
+                // Check if this is a new unique user for this campaign
+                const uniqueKey = `unique_${campaignId}_${userId}`;
+                const isNewUser = !localStorage.getItem(uniqueKey);
+                
+                if (isNewUser) {
+                    updates.uniqueUsers = increment(1);
+                    localStorage.setItem(uniqueKey, 'true');
+                }
+                
+                await updateDoc(campaignRef, updates);
 
             } catch (error) {
                 console.error('Error saving spin:', error);
