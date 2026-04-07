@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Campaign - Kataflam</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .header {
+            background: white;
+            padding: 25px 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 1.8em;
+        }
+
+        .header .breadcrumb {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .header .breadcrumb a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 30px;
+        }
+
+        .editor-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .section-title {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .color-picker-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .color-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .color-input input[type="color"] {
+            width: 60px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .segments-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .segment-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .segment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .segment-number {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .segment-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr 100px;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .segment-controls input {
+            padding: 10px;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        button.secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        button.secondary:hover {
+            background: #bdbdbd;
+        }
+
+        button.danger {
+            background: #dc3545;
+        }
+
+        button.danger:hover {
+            background: #c82333;
+        }
+
+        button.success {
+            background: #28a745;
+        }
+
+        button.add-segment {
+            width: 100%;
+            margin-top: 15px;
+            background: #28a745;
+        }
+
+        .preview-section {
+            position: sticky;
+            top: 30px;
+        }
+
+        .wheel-preview {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1;
+            margin: 20px auto;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+
+        .wheel {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: transform 0.3s;
+        }
+
+        .wheel-segment {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            transform-origin: 100% 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .wheel-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            z-index: 10;
+        }
+
+        .wheel-pointer {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 25px solid #dc3545;
+            z-index: 11;
+        }
+
+        .probability-warning {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            color: #856404;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .probability-warning.show {
+            display: block;
+        }
+
+        .save-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        .save-actions button {
+            flex: 1;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #666;
+        }
+
+        .loading .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>✏️ Edit Campaign</h1>
+                <div class="breadcrumb">
+                    <a href="dashboard.html">Dashboard</a> / 
+                    <a href="campaigns.html">Campaigns</a> / 
+                    <span id="campaignName">Loading...</span>
+                </div>
+            </div>
+            <div>
+                <button onclick="window.location.href='campaigns.html'" class="secondary">
+                    ← Back to Campaigns
+                </button>
+            </div>
+        </div>
+
+        <div id="loadingState" class="loading">
+            <div class="spinner"></div>
+            <p>Loading campaign...</p>
+        </div>
+
+        <div id="editorContent" style="display: none;">
+            <div class="main-grid">
+                <!-- Editor Section -->
+                <div>
+                    <!-- Campaign Settings -->
+                    <div class="editor-section">
+                        <h2 class="section-title">⚙️ Campaign Settings</h2>
+                        
+                        <div class="form-group">
+                            <label>Campaign Name</label>
+                            <input type="text" id="editCampaignName" placeholder="e.g., Black Friday Spin">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="editCampaignDescription" rows="3" placeholder="Brief description..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="editCampaignStatus">
+                                <option value="active">Active (Live)</option>
+                                <option value="paused">Paused (Draft)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Wheel Branding -->
+                    <div class="editor-section" style="margin-top: 30px;">
+                        <h2 class="section-title">🎨 Wheel Branding</h2>
+                        
+                        <div class="color-picker-group">
+                            <div class="form-group">
+                                <label>Primary Color</label>
+                                <div class="color-input">
+                                    <input type="color" id="primaryColor" value="#667eea">
+                                    <input type="text" id="primaryColorText" value="#667eea" readonly>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Secondary Color</label>
+                                <div class="color-input">
+                                    <input type="color" id="secondaryColor" value="#764ba2">
+                                    <input type="text" id="secondaryColorText" value="#764ba2" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Wheel Segments -->
+                    <div class="editor-section" style="margin-top: 30px;">
+                        <h2 class="section-title">🎰 Wheel Segments</h2>
+                        
+                        <div class="segments-list" id="segmentsList">
+                            <!-- Segments will be loaded here -->
+                        </div>
+
+                        <button class="add-segment" onclick="addSegment()">
+                            ➕ Add Segment
+                        </button>
+
+                        <div class="probability-warning" id="probabilityWarning">
+                            ⚠️ Total probability must equal 100%! Current total: <span id="totalProbability">0</span>%
+                        </div>
+                    </div>
+
+                    <!-- Save Actions -->
+                    <div class="save-actions">
+                        <button onclick="saveCampaign()" id="saveBtn">
+                            💾 Save Changes
+                        </button>
+                        <button onclick="window.location.href='campaigns.html'" class="secondary">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Preview Section -->
+                <div class="preview-section">
+                    <div class="wheel-preview">
+                        <h3 class="section-title">🎡 Live Preview</h3>
+                        
+                        <div class="wheel-container">
+                            <div class="wheel-pointer"></div>
+                            <div class="wheel" id="wheelPreview">
+                                <!-- Wheel segments will be rendered here -->
+                            </div>
+                            <div class="wheel-center">🎁</div>
+                        </div>
+
+                        <button onclick="testSpin()" class="success" style="width: 100%; margin-top: 20px;">
+                            🎲 Test Spin
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD0LKrnMv-hhM5_uzKeGvjOf-yOXt7rVmM",
+            authDomain: "kataflam-white-label.firebaseapp.com",
+            projectId: "kataflam-white-label",
+            storageBucket: "kataflam-white-label.firebasestorage.app",
+            messagingSenderId: "571581972788",
+            appId: "1:571581972788:web:7bb7cc53145a425e40a561"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let campaignId = null;
+        let campaignData = null;
+        let segments = [];
+
+        // Get campaign ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        campaignId = urlParams.get('id');
+
+        if (!campaignId) {
+            alert('❌ No campaign ID provided!');
+            window.location.href = 'campaigns.html';
+        }
+
+        // Check authentication
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            currentUser = user;
+            await loadCampaign();
+        });
+
+        async function loadCampaign() {
+            try {
+                const campaignDoc = await getDoc(doc(db, 'campaigns', campaignId));
+                
+                if (!campaignDoc.exists()) {
+                    alert('❌ Campaign not found!');
+                    window.location.href = 'campaigns.html';
+                    return;
+                }
+
+                campaignData = campaignDoc.data();
+
+                // Check ownership
+                if (campaignData.userId !== currentUser.uid) {
+                    alert('❌ Unauthorized access!');
+                    window.location.href = 'campaigns.html';
+                    return;
+                }
+
+                // Load data into form
+                document.getElementById('campaignName').textContent = campaignData.name;
+                document.getElementById('editCampaignName').value = campaignData.name;
+                document.getElementById('editCampaignDescription').value = campaignData.description || '';
+                document.getElementById('editCampaignStatus').value = campaignData.status;
+
+                // Load brand colors
+                const colors = campaignData.wheelConfig?.brandColors || { primary: '#667eea', secondary: '#764ba2' };
+                document.getElementById('primaryColor').value = colors.primary;
+                document.getElementById('primaryColorText').value = colors.primary;
+                document.getElementById('secondaryColor').value = colors.secondary;
+                document.getElementById('secondaryColorText').value = colors.secondary;
+
+                // Load segments
+                segments = campaignData.wheelConfig?.segments || [];
+                renderSegments();
+                updatePreview();
+
+                // Show editor
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('editorContent').style.display = 'block';
+
+            } catch (error) {
+                console.error('Error loading campaign:', error);
+                alert('❌ Error loading campaign!');
+                window.location.href = 'campaigns.html';
+            }
+        }
+
+        function renderSegments() {
+            const container = document.getElementById('segmentsList');
+            
+            container.innerHTML = segments.map((segment, index) => `
+                <div class="segment-item">
+                    <div class="segment-header">
+                        <span class="segment-number">Segment ${index + 1}</span>
+                        <button onclick="removeSegment(${index})" class="danger" style="padding: 5px 15px; font-size: 0.9em;">
+                            🗑️ Remove
+                        </button>
+                    </div>
+                    
+                    <div class="segment-controls">
+                        <input type="text" placeholder="Prize text" value="${segment.text}" 
+                               onchange="updateSegment(${index}, 'text', this.value)">
+                        
+                        <input type="color" value="${segment.color}" 
+                               onchange="updateSegment(${index}, 'color', this.value)">
+                        
+                        <input type="number" placeholder="%" min="0" max="100" value="${segment.probability}" 
+                               onchange="updateSegment(${index}, 'probability', parseInt(this.value))">
+                    </div>
+                    
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label style="font-size: 0.9em;">Voucher Codes (one per line)</label>
+                        <textarea rows="2" placeholder="CODE1\nCODE2\nCODE3" 
+                                  onchange="updateSegment(${index}, 'vouchers', this.value)">${segment.vouchers || ''}</textarea>
+                    </div>
+                </div>
+            `).join('');
+
+            updateProbabilityWarning();
+        }
+
+        window.updateSegment = function(index, field, value) {
+            segments[index][field] = value;
+            updatePreview();
+            updateProbabilityWarning();
+        };
+
+        window.addSegment = function() {
+            segments.push({
+                text: 'New Prize',
+                color: '#' + Math.floor(Math.random()*16777215).toString(16),
+                probability: 10,
+                vouchers: ''
+            });
+            renderSegments();
+            updatePreview();
+        };
+
+        window.removeSegment = function(index) {
+            if (segments.length <= 1) {
+                alert('❌ You must have at least 1 segment!');
+                return;
+            }
+            
+            if (confirm('Remove this segment?')) {
+                segments.splice(index, 1);
+                renderSegments();
+                updatePreview();
+            }
+        };
+
+        function updateProbabilityWarning() {
+            const total = segments.reduce((sum, s) => sum + (s.probability || 0), 0);
+            document.getElementById('totalProbability').textContent = total;
+            
+            const warning = document.getElementById('probabilityWarning');
+            if (total !== 100) {
+                warning.classList.add('show');
+            } else {
+                warning.classList.remove('show');
+            }
+        }
+
+        function updatePreview() {
+            const wheel = document.getElementById('wheelPreview');
+            const anglePerSegment = 360 / segments.length;
+            
+            wheel.innerHTML = segments.map((segment, index) => {
+                const rotation = anglePerSegment * index;
+                return `
+                    <div class="wheel-segment" style="
+                        background: ${segment.color};
+                        transform: rotate(${rotation}deg) skewY(${-90 + anglePerSegment}deg);
+                    ">
+                        <span style="transform: skewY(${90 - anglePerSegment}deg) rotate(${anglePerSegment/2}deg);">
+                            ${segment.text}
+                        </span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Color pickers
+        document.getElementById('primaryColor')?.addEventListener('change', (e) => {
+            document.getElementById('primaryColorText').value = e.target.value;
+        });
+
+        document.getElementById('secondaryColor')?.addEventListener('change', (e) => {
+            document.getElementById('secondaryColorText').value = e.target.value;
+        });
+
+        window.testSpin = function() {
+            const wheel = document.getElementById('wheelPreview');
+            const randomRotation = Math.floor(Math.random() * 360) + 720; // At least 2 full rotations
+            wheel.style.transform = `rotate(${randomRotation}deg)`;
+            wheel.style.transition = 'transform 3s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
+            
+            setTimeout(() => {
+                wheel.style.transition = 'transform 0.3s';
+            }, 3000);
+        };
+
+        window.saveCampaign = async function() {
+            const btn = document.getElementById('saveBtn');
+            
+            // Validate
+            const name = document.getElementById('editCampaignName').value.trim();
+            if (!name) {
+                alert('❌ Please enter a campaign name!');
+                return;
+            }
+
+            const total = segments.reduce((sum, s) => sum + (s.probability || 0), 0);
+            if (total !== 100) {
+                if (!confirm(`⚠️ Total probability is ${total}%, not 100%.\n\nDo you want to save anyway?`)) {
+                    return;
+                }
+            }
+
+            if (segments.length === 0) {
+                alert('❌ You must have at least 1 segment!');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Saving...';
+
+            try {
+                await updateDoc(doc(db, 'campaigns', campaignId), {
+                    name: name,
+                    description: document.getElementById('editCampaignDescription').value.trim(),
+                    status: document.getElementById('editCampaignStatus').value,
+                    wheelConfig: {
+                        brandColors: {
+                            primary: document.getElementById('primaryColor').value,
+                            secondary: document.getElementById('secondaryColor').value
+                        },
+                        segments: segments
+                    }
+                });
+
+                alert('✅ Campaign saved successfully!');
+                window.location.href = 'campaigns.html';
+            } catch (error) {
+                console.error('Error saving campaign:', error);
+                alert('❌ Error saving campaign. Please try again.');
+                btn.disabled = false;
+                btn.textContent = '💾 Save Changes';
+            }
+        };
+    </script>
+</body>
+</html>
