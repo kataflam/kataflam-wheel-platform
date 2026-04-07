@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Campaigns - Kataflam</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px 20px;
+            color: white;
+        }
+
+        .sidebar .logo {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 40px;
+        }
+
+        .sidebar nav {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .sidebar nav a {
+            color: white;
+            text-decoration: none;
+            padding: 12px 15px;
+            border-radius: 10px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar nav a:hover,
+        .sidebar nav a.active {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .sidebar .user-info {
+            position: absolute;
+            bottom: 30px;
+            left: 20px;
+            right: 20px;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+
+        .sidebar .user-info .name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            padding: 30px;
+        }
+
+        .header {
+            background: white;
+            padding: 25px 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 1.8em;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+
+        button.secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        button.secondary:hover {
+            background: #bdbdbd;
+        }
+
+        button.danger {
+            background: #dc3545;
+        }
+
+        button.danger:hover {
+            background: #c82333;
+        }
+
+        button.success {
+            background: #28a745;
+        }
+
+        .campaigns-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .campaign-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .campaign-card:hover {
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .campaign-card .status {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .campaign-card .status.active {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .campaign-card .status.paused {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+
+        .campaign-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+
+        .campaign-card .campaign-info {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+
+        .campaign-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .campaign-stats .stat {
+            text-align: center;
+        }
+
+        .campaign-stats .stat .number {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .campaign-stats .stat .label {
+            font-size: 0.8em;
+            color: #666;
+        }
+
+        .campaign-card .actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .campaign-card .actions button {
+            flex: 1;
+            padding: 10px;
+            font-size: 0.9em;
+        }
+
+        .empty-state {
+            background: white;
+            padding: 80px 40px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .empty-state .icon {
+            font-size: 5em;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .modal-content h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #666;
+        }
+
+        .loading .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">🎡 Kataflam</div>
+        
+        <nav>
+            <a href="dashboard.html">
+                <span>📊</span> Dashboard
+            </a>
+            <a href="campaigns.html" class="active">
+                <span>🎡</span> My Campaigns
+            </a>
+            <a href="#" onclick="alert('Coming in Week 5!')">
+                <span>➕</span> Create New
+            </a>
+            <a href="#" onclick="alert('Coming in Week 7!')">
+                <span>📈</span> Analytics
+            </a>
+            <a href="#" onclick="alert('Coming in Week 6!')">
+                <span>🔗</span> Integrations
+            </a>
+            <a href="dashboard.html">
+                <span>⚙️</span> Settings
+            </a>
+        </nav>
+
+        <div class="user-info">
+            <div class="name" id="userName">Loading...</div>
+            <div class="plan" id="userPlan">Loading...</div>
+            <button class="secondary" onclick="logout()" style="width: 100%; margin-top: 10px; padding: 8px; font-size: 0.9em;">
+                🚪 Logout
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="header">
+            <div>
+                <h1>My Campaigns 🎡</h1>
+                <p style="color: #666; margin-top: 5px;">Manage your spin-the-wheel campaigns</p>
+            </div>
+            <div>
+                <button onclick="showCreateCampaign()">
+                    ➕ Create Campaign
+                </button>
+            </div>
+        </div>
+
+        <div id="loadingState" class="loading">
+            <div class="spinner"></div>
+            <p>Loading campaigns...</p>
+        </div>
+
+        <div id="campaignsContainer" style="display: none;">
+            <div class="campaigns-grid" id="campaignsGrid">
+                <!-- Campaigns will be loaded here -->
+            </div>
+        </div>
+
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <div class="icon">🎡</div>
+            <h2>No Campaigns Yet</h2>
+            <p>Create your first spin-the-wheel campaign to get started!</p>
+            <button onclick="showCreateCampaign()">
+                ➕ Create Your First Campaign
+            </button>
+        </div>
+    </div>
+
+    <!-- Create Campaign Modal -->
+    <div class="modal" id="createCampaignModal">
+        <div class="modal-content">
+            <h2>➕ Create New Campaign</h2>
+            
+            <div class="form-group">
+                <label>Campaign Name *</label>
+                <input type="text" id="campaignName" placeholder="e.g., Black Friday Spin">
+            </div>
+
+            <div class="form-group">
+                <label>Description</label>
+                <textarea id="campaignDescription" rows="3" placeholder="Brief description of this campaign..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Status</label>
+                <select id="campaignStatus">
+                    <option value="active">Active (Live)</option>
+                    <option value="paused">Paused (Draft)</option>
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 30px;">
+                <button onclick="closeModal('createCampaignModal')" class="secondary" style="flex: 1;">
+                    Cancel
+                </button>
+                <button onclick="createCampaign()" id="createBtn" style="flex: 1;">
+                    Create Campaign
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, collection, query, where, getDocs, addDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD0LKrnMv-hhM5_uzKeGvjOf-yOXt7rVmM",
+            authDomain: "kataflam-white-label.firebaseapp.com",
+            projectId: "kataflam-white-label",
+            storageBucket: "kataflam-white-label.firebasestorage.app",
+            messagingSenderId: "571581972788",
+            appId: "1:571581972788:web:7bb7cc53145a425e40a561"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let userData = null;
+        let campaigns = [];
+
+        // Check authentication
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            currentUser = user;
+            await loadUserData();
+            await loadCampaigns();
+        });
+
+        async function loadUserData() {
+            try {
+                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                
+                if (userDoc.exists()) {
+                    userData = userDoc.data();
+                    
+                    document.getElementById('userName').textContent = userData.companyName || 'My Company';
+                    document.getElementById('userPlan').textContent = (userData.plan || 'trial').charAt(0).toUpperCase() + (userData.plan || 'trial').slice(1) + ' Plan';
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+            }
+        }
+
+        async function loadCampaigns() {
+            try {
+                document.getElementById('loadingState').style.display = 'block';
+                document.getElementById('campaignsContainer').style.display = 'none';
+                document.getElementById('emptyState').style.display = 'none';
+
+                const q = query(collection(db, 'campaigns'), where('userId', '==', currentUser.uid));
+                const snapshot = await getDocs(q);
+                
+                campaigns = [];
+                snapshot.forEach(doc => {
+                    campaigns.push({ id: doc.id, ...doc.data() });
+                });
+
+                document.getElementById('loadingState').style.display = 'none';
+
+                if (campaigns.length === 0) {
+                    document.getElementById('emptyState').style.display = 'block';
+                } else {
+                    document.getElementById('campaignsContainer').style.display = 'block';
+                    renderCampaigns();
+                }
+            } catch (error) {
+                console.error('Error loading campaigns:', error);
+                document.getElementById('loadingState').innerHTML = '<p style="color: #dc3545;">Error loading campaigns. Please refresh.</p>';
+            }
+        }
+
+        function renderCampaigns() {
+            const grid = document.getElementById('campaignsGrid');
+            
+            grid.innerHTML = campaigns.map(campaign => {
+                const createdDate = campaign.createdAt ? new Date(campaign.createdAt).toLocaleDateString() : 'N/A';
+                
+                return `
+                    <div class="campaign-card">
+                        <span class="status ${campaign.status}">${campaign.status.toUpperCase()}</span>
+                        <h3>${campaign.name}</h3>
+                        <div class="campaign-info">
+                            Created: ${createdDate}
+                        </div>
+                        
+                        <div class="campaign-stats">
+                            <div class="stat">
+                                <div class="number">${campaign.totalSpins || 0}</div>
+                                <div class="label">Total Spins</div>
+                            </div>
+                            <div class="stat">
+                                <div class="number">${campaign.uniqueUsers || 0}</div>
+                                <div class="label">Unique Users</div>
+                            </div>
+                        </div>
+
+                        ${campaign.description ? `<p style="color: #666; font-size: 0.9em; margin: 10px 0;">${campaign.description}</p>` : ''}
+
+                        <div class="actions">
+                            <button onclick="editCampaign('${campaign.id}')" class="secondary">
+                                ✏️ Edit
+                            </button>
+                            <button onclick="viewWheel('${campaign.id}')">
+                                🎡 View
+                            </button>
+                            <button onclick="deleteCampaign('${campaign.id}')" class="danger">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.showCreateCampaign = function() {
+            document.getElementById('createCampaignModal').style.display = 'flex';
+        };
+
+        window.closeModal = function(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        };
+
+        window.createCampaign = async function() {
+            const name = document.getElementById('campaignName').value.trim();
+            const description = document.getElementById('campaignDescription').value.trim();
+            const status = document.getElementById('campaignStatus').value;
+            const btn = document.getElementById('createBtn');
+
+            if (!name) {
+                alert('❌ Please enter a campaign name!');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Creating...';
+
+            try {
+                await addDoc(collection(db, 'campaigns'), {
+                    userId: currentUser.uid,
+                    name: name,
+                    description: description,
+                    status: status,
+                    createdAt: new Date().toISOString(),
+                    totalSpins: 0,
+                    uniqueUsers: 0,
+                    wheelConfig: {
+                        brandColors: {
+                            primary: '#667eea',
+                            secondary: '#764ba2'
+                        },
+                        segments: [
+                            { text: '20% OFF', color: '#FF6B9D', probability: 15, vouchers: '' },
+                            { text: '10% OFF', color: '#4D96FF', probability: 25, vouchers: '' },
+                            { text: 'Try Again', color: '#FF5757', probability: 60, vouchers: '' }
+                        ]
+                    }
+                });
+
+                alert('✅ Campaign created successfully!');
+                closeModal('createCampaignModal');
+                
+                // Clear form
+                document.getElementById('campaignName').value = '';
+                document.getElementById('campaignDescription').value = '';
+                
+                // Reload campaigns
+                await loadCampaigns();
+            } catch (error) {
+                console.error('Error creating campaign:', error);
+                alert('❌ Error creating campaign. Please try again.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Create Campaign';
+            }
+        };
+
+        window.editCampaign = function(campaignId) {
+            alert('✏️ Edit campaign feature coming in Week 5!');
+        };
+
+        window.viewWheel = function(campaignId) {
+            alert('🎡 View wheel feature coming in Week 5!');
+        };
+
+        window.deleteCampaign = async function(campaignId) {
+            const campaign = campaigns.find(c => c.id === campaignId);
+            if (!campaign) return;
+
+            if (!confirm(`⚠️ Delete "${campaign.name}"?\n\nThis will permanently delete the campaign and all its data.`)) return;
+
+            try {
+                await deleteDoc(doc(db, 'campaigns', campaignId));
+                alert('✅ Campaign deleted successfully!');
+                await loadCampaigns();
+            } catch (error) {
+                console.error('Error deleting campaign:', error);
+                alert('❌ Error deleting campaign. Please try again.');
+            }
+        };
+
+        window.logout = async function() {
+            if (confirm('Are you sure you want to logout?')) {
+                try {
+                    await signOut(auth);
+                    window.location.href = 'index.html';
+                } catch (error) {
+                    console.error('Logout error:', error);
+                }
+            }
+        };
+    </script>
+</body>
+</html>

@@ -341,15 +341,19 @@
     <div class="sidebar">
         <div class="logo">🎡 Kataflam</div>
         <nav>
-            <a href="#" class="active"><span>📊</span> Dashboard</a>
-            <a href="#"><span>🎡</span> Campaigns</a>
-            <a href="#"><span>📈</span> Analytics</a>
-            <a href="#"><span>⚙️</span> Settings</a>
-            <a href="#" onclick="logout()"><span>🚪</span> Logout</a>
+            <a href="dashboard.html" class="active"><span>📊</span> Dashboard</a>
+            <a href="campaigns.html"><span>🎡</span> My Campaigns</a>
+            <a href="#" onclick="alert('Coming in Week 5!')"><span>➕</span> Create New</a>
+            <a href="#" onclick="alert('Coming in Week 7!')"><span>📈</span> Analytics</a>
+            <a href="#" onclick="alert('Coming in Week 6!')"><span>🔗</span> Integrations</a>
+            <a href="#" onclick="showSettings()"><span>⚙️</span> Settings</a>
         </nav>
         <div class="user-info">
             <div class="name" id="userName">Loading...</div>
             <div class="plan" id="userPlan">Loading...</div>
+            <button onclick="logout()" style="width: 100%; margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
+                🚪 Logout
+            </button>
         </div>
     </div>
 
